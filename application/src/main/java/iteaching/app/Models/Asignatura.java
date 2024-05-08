@@ -11,5 +11,9 @@ public class Asignatura {
     
     String nombre;
 
+    TipoAsignatura tipoAsignatura;
+
     List<Estudiante> estudiantes;
+
+
 }
