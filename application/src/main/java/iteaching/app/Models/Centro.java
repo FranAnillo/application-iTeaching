@@ -23,13 +23,13 @@ public class Centro {
     private String direccion;
     @Column(name = "phone")
     private String telefono;
-  //  @OneToMany
+    @OneToMany
     private List<Asignatura> asignaturas;
     
- //   @OneToMany
+    @OneToMany
     private List<Profesor> profesores;
     
-    //@OneToMany
+    @OneToMany
     private List<Estudiante> estudiantes;
 
     public Centro(String nombre, String direccion, String telefono) {
