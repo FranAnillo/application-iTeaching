@@ -1,0 +1,15 @@
+﻿1. Logins OK: Admin=ROLE_ADMIN Prof=ROLE_PROFESOR Est=ROLE_ESTUDIANTE
+2. Admin create asig: OK (id=2)
+3. Prof create asig: DENIED (403) - OK
+4. Est create asig: DENIED (403) - OK
+5a. Personas found: prof=2 est=3
+5b. Admin add prof to asig: OK
+6. Admin add est to asig: OK
+7. Asig check: profs=1 ests=1
+8. Prof create grupo TEORIA: OK (id=3)
+9. Prof create grupo PRACTICA: OK (id=4)
+10. Prof create carpeta: OK (id=2)
+11. Est create grupo: DENIED (403) - OK
+12. Est create carpeta: DENIED (403) - OK
+13. List grupos: 2 found
+14. List carpetas: 1 found

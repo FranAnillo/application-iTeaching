@@ -1,0 +1,7 @@
+﻿1. Insult 'idiota': BLOCKED - {"message":"El comentario contiene lenguaje inapropiado. Las valoraciones deben ser respetuosas y constructivas.","timestamp":"2026-03-03T15:06:53.429832600","status":400}
+2. Vulgar 'mierda': BLOCKED - {"message":"El comentario contiene lenguaje inapropiado. Las valoraciones deben ser respetuosas y constructivas.","timestamp":"2026-03-03T15:06:53.518548","status":400}
+3. PuntosMejora insult: BLOCKED - {"message":"Puntos de mejora: El comentario contiene lenguaje inapropiado. Las valoraciones deben ser respetuosas y constructivas.","timestamp":"2026-03-03T15:06:53.579993800","status":400}
+4. ALL CAPS: BLOCKED - {"message":"El comentario contiene demasiadas mayúsculas. Por favor, escribe de forma normal.","timestamp":"2026-03-03T15:06:53.646895","status":400}
+5. Excess punctuation: BLOCKED - {"message":"Por favor, evita el uso excesivo de signos de exclamación o interrogación.","timestamp":"2026-03-03T15:06:53.708063500","status":400}
+6. Constructive: ALLOWED (id=2) - OK
+7. English insult: BLOCKED - {"message":"El comentario contiene lenguaje inapropiado. Las valoraciones deben ser respetuosas y constructivas.","timestamp":"2026-03-03T15:06:53.836380900","status":400}

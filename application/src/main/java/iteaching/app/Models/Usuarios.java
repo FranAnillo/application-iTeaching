@@ -42,12 +42,11 @@ public class Usuarios {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.ROLE_USER;
+    private Role role = Role.ROLE_ESTUDIANTE;
 
     public enum Role {
-        ROLE_USER,
-        ROLE_ADMIN,
-        ROLE_TEACHER,
-        ROLE_STUDENT
+        ROLE_ESTUDIANTE,
+        ROLE_PROFESOR,
+        ROLE_ADMIN
     }
 }

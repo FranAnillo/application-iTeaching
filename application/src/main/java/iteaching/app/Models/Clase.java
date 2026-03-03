@@ -44,11 +44,11 @@ public class Clase {
 
     @ManyToOne
     @JoinColumn(name = "alumno_id")
-    private Estudiante alumno;
+    private Persona alumno;
 
     @ManyToOne
     @JoinColumn(name = "profesor_id")
-    private Profesor profesor;
+    private Persona profesor;
 
     @ManyToOne
     @JoinColumn(name = "asignatura_id")

@@ -15,5 +15,9 @@ public class AsignaturaDTO {
     @NotBlank
     private String nombre;
     private String descripcion;
+    private String url;
+    private Long creadorId;
+    private String creadorNombre;
+    private Set<Long> profesorIds;
     private Set<Long> estudianteIds;
 }

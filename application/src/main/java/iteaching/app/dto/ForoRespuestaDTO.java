@@ -1,6 +1,7 @@
 package iteaching.app.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,15 +9,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProfesorDTO {
+public class ForoRespuestaDTO {
     private Long id;
     @NotBlank
-    private String nombre;
-    @NotBlank
-    private String apellido;
-    private String email;
-    private String telefono;
-    private Double puntuacion;
-    private Integer division;
-    private String avatar;
+    private String contenido;
+    private String fechaCreacion;
+    @NotNull
+    private Long temaId;
+    private Long autorId;
+    private String autorNombre;
 }

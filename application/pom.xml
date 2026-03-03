@@ -11,8 +11,8 @@
 	<groupId>iteaching.app</groupId>
 	<artifactId>application</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>application</name>
-	<description>iTeaching Application</description>
+	<name>iteaching</name>
+	<description>iTeaching 2.0 - Aula Virtual</description>
 	<properties>
 		<java.version>17</java.version>
 		<jjwt.version>0.12.5</jjwt.version>
