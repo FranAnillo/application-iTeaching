@@ -1,48 +1,43 @@
 package iteaching.app.Models;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @Entity
-@Table(name = "Person")
-@MappedSuperclass
-public class Persona extends Usuarios{
-    
-    @NotEmpty
-    @Column(name = "name")
-    protected String nombre;
+@Table(name = "personas")
+public class Persona extends Usuarios {
 
-    @NotEmpty
-    @Column(name = "surname")
-    protected String apellido;
+    @NotBlank
+    @Column(name = "nombre", nullable = false)
+    private String nombre;
 
-    @Column(name = "telephone")
-	@NotEmpty
-	@Digits(fraction = 0, integer = 10)
-	private String telefono;
+    @NotBlank
+    @Column(name = "apellido", nullable = false)
+    private String apellido;
 
-	@Column(name= "email")
-	@NotEmpty
-	@Pattern(regexp = "\\b[\\w.%-]+@[-.\\w]+\\.[A-Za-z]{2,4}\\b")
-	private String email;
-	public String getFirstName() {
-		return this.nombre;
-	}
+    @Column(name = "telefono")
+    @Digits(fraction = 0, integer = 15)
+    private String telefono;
 
-	@Transient
-	public String getFullName() {
-		return nombre+" "+apellido;
-	}
+    @Column(name = "email", unique = true)
+    @NotBlank
+    @Pattern(regexp = "^[\\w.%-]+@[-.\\w]+\\.[A-Za-z]{2,6}$")
+    private String email;
 
+    @Transient
+    public String getNombreCompleto() {
+        return nombre + " " + apellido;
+    }
 }
