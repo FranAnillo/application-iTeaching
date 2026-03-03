@@ -11,19 +11,24 @@ import {
   valoracionesApi,
   gruposApi,
   carpetasApi,
+  clasesApi,
+  usuariosApi,
 } from '../api/endpoints';
-import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta } from '../types';
+import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase } from '../types';
 
-type Tab = 'info' | 'anuncios' | 'materiales' | 'tareas' | 'foro' | 'grupos' | 'calificaciones';
+type Tab = 'info' | 'anuncios' | 'materiales' | 'horarios' | 'tareas' | 'evaluaciones' | 'simulacros' | 'foro' | 'grupos' | 'calificaciones';
 
-var TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: 'info', label: 'Informacion', icon: 'i' },
-  { key: 'anuncios', label: 'Anuncios', icon: '!' },
-  { key: 'materiales', label: 'Materiales', icon: '#' },
-  { key: 'tareas', label: 'Tareas', icon: 'T' },
-  { key: 'foro', label: 'Foro', icon: 'F' },
-  { key: 'grupos', label: 'Grupos', icon: 'G' },
-  { key: 'calificaciones', label: 'Calificaciones', icon: 'C' },
+var ALL_TABS: { key: Tab; label: string; icon: string; roles: string[] | null }[] = [
+  { key: 'info', label: 'Informacion', icon: 'i', roles: null },
+  { key: 'anuncios', label: 'Anuncios', icon: '!', roles: null },
+  { key: 'materiales', label: 'Materiales', icon: '#', roles: null },
+  { key: 'horarios', label: 'Horarios', icon: 'H', roles: null },
+  { key: 'tareas', label: 'Tareas', icon: 'T', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
+  { key: 'evaluaciones', label: 'Evaluaciones', icon: 'E', roles: null },
+  { key: 'simulacros', label: 'Simulacros', icon: 'S', roles: null },
+  { key: 'foro', label: 'Foro', icon: 'F', roles: null },
+  { key: 'grupos', label: 'Grupos', icon: 'G', roles: null },
+  { key: 'calificaciones', label: 'Calificaciones', icon: 'C', roles: null },
 ];
 
 export default function AsignaturaDetailPage() {
@@ -87,7 +92,7 @@ export default function AsignaturaDetailPage() {
   var showTareaFormState = useState(false);
   var showTareaForm = showTareaFormState[0];
   var setShowTareaForm = showTareaFormState[1];
-  var tareaFormState = useState({ titulo: '', descripcion: '', fechaEntrega: '', puntuacionMaxima: 10 });
+  var tareaFormState = useState({ titulo: '', descripcion: '', fechaEntrega: '', puntuacionMaxima: 10, tipoTarea: 'TAREA' });
   var tareaForm = tareaFormState[0];
   var setTareaForm = tareaFormState[1];
 
@@ -156,6 +161,16 @@ export default function AsignaturaDetailPage() {
   var grupoForm = grupoFormState[0];
   var setGrupoForm = grupoFormState[1];
 
+  // Horarios (clases de esta asignatura)
+  var clasesState = useState<Clase[]>([]);
+  var clases = clasesState[0];
+  var setClases = clasesState[1];
+
+  // My user ID (for grupo membership checks)
+  var meIdState = useState<number | null>(null);
+  var meId = meIdState[0];
+  var setMeId = meIdState[1];
+
   // Carpetas
   var carpetasState = useState<Carpeta[]>([]);
   var carpetas = carpetasState[0];
@@ -172,6 +187,12 @@ export default function AsignaturaDetailPage() {
   var isProfesor = user && user.role === 'ROLE_PROFESOR';
   var canManageContent = isAdmin || isProfesor;
 
+  // Filter tabs by role
+  var TABS = ALL_TABS.filter(function (t) {
+    if (!t.roles) return true;
+    return user && t.roles.indexOf(user.role) !== -1;
+  });
+
   useEffect(function () {
     if (!isNew && id) {
       asignaturasApi.getById(Number(id))
@@ -179,6 +200,8 @@ export default function AsignaturaDetailPage() {
         .catch(function () { setError('Asignatura no encontrada'); })
         .finally(function () { setLoading(false); });
     }
+    // Fetch current user ID (for grupo membership checks)
+    usuariosApi.me().then(function (r) { setMeId(r.data.id); }).catch(function () {});
   }, [id, isNew]);
 
   // Load tab data when switching
@@ -191,6 +214,11 @@ export default function AsignaturaDetailPage() {
       carpetasApi.getByAsignatura(numId).then(function (r) { setCarpetas(r.data); }).catch(function () {});
     }
     if (tab === 'tareas') tareasApi.getByAsignatura(numId).then(function (r) { setTareas(r.data); }).catch(function () {});
+    if (tab === 'evaluaciones') tareasApi.getByAsignatura(numId).then(function (r) { setTareas(r.data); }).catch(function () {});
+    if (tab === 'simulacros') tareasApi.getByAsignatura(numId).then(function (r) { setTareas(r.data); }).catch(function () {});
+    if (tab === 'horarios') clasesApi.getAll().then(function (r) {
+      setClases(r.data.filter(function (c) { return c.asignaturaId === numId; }));
+    }).catch(function () {});
     if (tab === 'foro') foroApi.getTemasByAsignatura(numId).then(function (r) { setTemas(r.data); }).catch(function () {});
     if (tab === 'grupos') gruposApi.getByAsignatura(numId).then(function (r) { setGrupos(r.data); }).catch(function () {});
     if (tab === 'calificaciones') {
@@ -218,6 +246,7 @@ export default function AsignaturaDetailPage() {
   function loadTemas() { foroApi.getTemasByAsignatura(Number(id)).then(function (r) { setTemas(r.data); }); }
   function loadGrupos() { gruposApi.getByAsignatura(Number(id)).then(function (r) { setGrupos(r.data); }); }
   function loadCarpetas() { carpetasApi.getByAsignatura(Number(id)).then(function (r) { setCarpetas(r.data); }); }
+  function loadClases() { clasesApi.getAll().then(function (r) { setClases(r.data.filter(function (c) { return c.asignaturaId === Number(id); })); }); }
 
   function handleCreateAnuncio(e: FormEvent) {
     e.preventDefault();
@@ -234,7 +263,7 @@ export default function AsignaturaDetailPage() {
   function handleCreateTarea(e: FormEvent) {
     e.preventDefault();
     tareasApi.create(Object.assign({}, tareaForm, { asignaturaId: Number(id) }))
-      .then(function () { setShowTareaForm(false); setTareaForm({ titulo: '', descripcion: '', fechaEntrega: '', puntuacionMaxima: 10 }); loadTareas(); });
+      .then(function () { setShowTareaForm(false); setTareaForm({ titulo: '', descripcion: '', fechaEntrega: '', puntuacionMaxima: 10, tipoTarea: 'TAREA' }); loadTareas(); });
   }
 
   function handleSelectTarea(t: Tarea) {
@@ -448,7 +477,7 @@ export default function AsignaturaDetailPage() {
                         <h4 className="font-semibold text-gray-900">{a.importante ? '[!] ' : ''}{a.titulo}</h4>
                         <p className="text-xs text-gray-400">{a.autorNombre} - {new Date(a.fechaCreacion).toLocaleString('es-ES')}</p>
                       </div>
-                      <button onClick={function () { anunciosApi.delete(a.id).then(loadAnuncios); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
+                      {canManageContent && <button onClick={function () { anunciosApi.delete(a.id).then(loadAnuncios); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
                     </div>
                     <p className="mt-2 text-sm text-gray-600 whitespace-pre-wrap">{a.contenido}</p>
                   </div>
@@ -525,7 +554,7 @@ export default function AsignaturaDetailPage() {
                     {m.descripcion && <p className="mt-2 text-sm text-gray-500">{m.descripcion}</p>}
                     <div className="mt-2 flex gap-2">
                       {m.urlRecurso && <a href={m.urlRecurso} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-500">Abrir</a>}
-                      <button onClick={function () { materialesApi.delete(m.id).then(loadMateriales); }} className="text-sm text-red-500 hover:text-red-700">Eliminar</button>
+                      {canManageContent && <button onClick={function () { materialesApi.delete(m.id).then(loadMateriales); }} className="text-sm text-red-500 hover:text-red-700">Eliminar</button>}
                     </div>
                   </div>
                 );
@@ -535,7 +564,73 @@ export default function AsignaturaDetailPage() {
         </div>
       )}
 
-      {/* ===== TAREAS TAB ===== */}
+      {/* ===== HORARIOS TAB (read-only for students) ===== */}
+      {tab === 'horarios' && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Horarios de clase</h3>
+            <button
+              onClick={function () {
+                var endpoint = canManageContent
+                  ? clasesApi.descargarHorarioCompletoPdf(numId)
+                  : clasesApi.descargarHorarioPdf(numId);
+                endpoint.then(function (response) {
+                  var blob = new Blob([response.data], { type: 'application/pdf' });
+                  var url = window.URL.createObjectURL(blob);
+                  var a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'horario_' + numId + '.pdf';
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                }).catch(function () {
+                  alert('Error al descargar el PDF de horario');
+                });
+              }}
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3" /></svg>
+              Descargar PDF
+            </button>
+          </div>
+          {clases.length === 0 ? (
+            <p className="rounded-xl bg-white p-8 text-center text-gray-500 shadow-sm">No hay clases programadas para esta asignatura</p>
+          ) : (
+            <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Profesor</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Hora inicio</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Hora fin</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {clases.map(function (c) {
+                    var estadoColor = 'bg-gray-100 text-gray-700';
+                    if (c.estadoClase === 'ACEPTADA') estadoColor = 'bg-green-100 text-green-700';
+                    if (c.estadoClase === 'SOLICITADA') estadoColor = 'bg-yellow-100 text-yellow-700';
+                    if (c.estadoClase === 'RECHAZADA') estadoColor = 'bg-red-100 text-red-700';
+                    if (c.estadoClase === 'COMPLETADA') estadoColor = 'bg-blue-100 text-blue-700';
+                    return (
+                      <tr key={c.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{c.profesorNombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{c.horaComienzo}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{c.horaFin}</td>
+                        <td className="px-4 py-3"><span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + estadoColor}>{c.estadoClase}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== TAREAS TAB (admin/profesor only) ===== */}
       {tab === 'tareas' && !selectedTarea && (
         <div>
           <div className="mb-4 flex items-center justify-between">
@@ -546,6 +641,11 @@ export default function AsignaturaDetailPage() {
             <form onSubmit={handleCreateTarea} className="mb-4 space-y-3 rounded-xl bg-white p-5 shadow-sm">
               <input type="text" value={tareaForm.titulo} onChange={function (e) { setTareaForm(Object.assign({}, tareaForm, { titulo: e.target.value })); }} placeholder="Titulo" required className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               <textarea value={tareaForm.descripcion} onChange={function (e) { setTareaForm(Object.assign({}, tareaForm, { descripcion: e.target.value })); }} placeholder="Descripcion e instrucciones" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <select value={tareaForm.tipoTarea} onChange={function (e) { setTareaForm(Object.assign({}, tareaForm, { tipoTarea: e.target.value })); }} className="rounded-lg border border-gray-300 px-3 py-2">
+                <option value="TAREA">Tarea</option>
+                <option value="EVALUACION">Evaluacion</option>
+                <option value="SIMULACRO">Simulacro</option>
+              </select>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Fecha limite</label>
@@ -647,6 +747,206 @@ export default function AsignaturaDetailPage() {
         </div>
       )}
 
+      {/* ===== EVALUACIONES TAB (all users, read-only for students) ===== */}
+      {tab === 'evaluaciones' && !selectedTarea && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Pruebas de evaluacion</h3>
+          </div>
+          {tareas.filter(function (t) { return t.tipoTarea === 'EVALUACION'; }).length === 0 ? (
+            <p className="rounded-xl bg-white p-8 text-center text-gray-500 shadow-sm">No hay pruebas de evaluacion</p>
+          ) : (
+            <div className="space-y-3">
+              {tareas.filter(function (t) { return t.tipoTarea === 'EVALUACION'; }).map(function (t) {
+                var isPast = new Date(t.fechaEntrega) < new Date();
+                return (
+                  <div key={t.id} className="rounded-xl bg-white p-5 shadow-sm cursor-pointer hover:shadow-md transition" onClick={function () { handleSelectTarea(t); }}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">[E] {t.titulo}</h4>
+                        <p className="text-xs text-gray-400">Por: {t.creadorNombre}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + (isPast ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700')}>
+                          {isPast ? 'Cerrada' : 'Abierta'}
+                        </span>
+                        <p className="mt-1 text-xs text-gray-400">Fecha: {new Date(t.fechaEntrega).toLocaleDateString('es-ES')}</p>
+                      </div>
+                    </div>
+                    {t.descripcion && <p className="mt-2 text-sm text-gray-600">{t.descripcion}</p>}
+                    <div className="mt-2 flex gap-3 text-xs text-gray-400">
+                      <span>Max: {t.puntuacionMaxima} pts</span>
+                      <span>{t.totalEntregas} entregas</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Evaluacion detail view (reuses selectedTarea) */}
+      {tab === 'evaluaciones' && selectedTarea && (
+        <div>
+          <button onClick={function () { setSelectedTarea(null); }} className="mb-4 text-sm text-indigo-600 hover:text-indigo-500">&lt;- Volver a evaluaciones</button>
+          <div className="mb-4 rounded-xl bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900">{selectedTarea.titulo}</h3>
+            <p className="text-sm text-gray-500">{selectedTarea.descripcion}</p>
+            <div className="mt-2 flex gap-4 text-xs text-gray-400">
+              <span>Fecha limite: {new Date(selectedTarea.fechaEntrega).toLocaleString('es-ES')}</span>
+              <span>Max: {selectedTarea.puntuacionMaxima} pts</span>
+            </div>
+          </div>
+
+          {isEstudiante && (
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h4 className="font-semibold text-gray-900">Tu entrega</h4>
+                <button onClick={function () { setShowEntregaForm(!showEntregaForm); }} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">{showEntregaForm ? 'Cancelar' : 'Enviar entrega'}</button>
+              </div>
+              {showEntregaForm && (
+                <form onSubmit={handleSubmitEntrega} className="mb-4 space-y-3 rounded-xl bg-white p-5 shadow-sm">
+                  <textarea value={entregaForm.contenido} onChange={function (e) { setEntregaForm(Object.assign({}, entregaForm, { contenido: e.target.value })); }} placeholder="Tu respuesta..." rows={4} required className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  <input type="text" value={entregaForm.urlAdjunto} onChange={function (e) { setEntregaForm(Object.assign({}, entregaForm, { urlAdjunto: e.target.value })); }} placeholder="URL adjunto (opcional)" className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">Enviar</button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {canManageContent && (
+            <div>
+              <h4 className="mb-3 font-semibold text-gray-900">Entregas ({entregas.length})</h4>
+              {entregas.length === 0 ? (
+                <p className="rounded-xl bg-white p-6 text-center text-gray-500 shadow-sm">No hay entregas aun</p>
+              ) : (
+                <div className="space-y-3">
+                  {entregas.map(function (en) {
+                    return (
+                      <div key={en.id} className="rounded-xl bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{en.estudianteNombre}</p>
+                            <p className="text-xs text-gray-400">{new Date(en.fechaEntrega).toLocaleString('es-ES')}</p>
+                          </div>
+                          {en.calificacion !== null ? (
+                            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-800">{en.calificacion}/{selectedTarea.puntuacionMaxima}</span>
+                          ) : (
+                            <button onClick={function () { handleCalificar(en.id); }} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100">Calificar</button>
+                          )}
+                        </div>
+                        <p className="mt-2 text-sm text-gray-600 whitespace-pre-wrap">{en.contenido}</p>
+                        {en.urlAdjunto && <a href={en.urlAdjunto} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-indigo-600">[Adjunto]</a>}
+                        {en.comentarioProfesor && <p className="mt-2 rounded bg-blue-50 p-2 text-sm text-blue-700">{en.comentarioProfesor}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== SIMULACROS TAB ===== */}
+      {tab === 'simulacros' && !selectedTarea && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Simulacros de examen</h3>
+            <p className="text-xs text-gray-400">Estos tests no cuentan como examen oficial</p>
+          </div>
+          {tareas.filter(function (t) { return t.tipoTarea === 'SIMULACRO'; }).length === 0 ? (
+            <p className="rounded-xl bg-white p-8 text-center text-gray-500 shadow-sm">No hay simulacros disponibles</p>
+          ) : (
+            <div className="space-y-3">
+              {tareas.filter(function (t) { return t.tipoTarea === 'SIMULACRO'; }).map(function (t) {
+                var isPast = new Date(t.fechaEntrega) < new Date();
+                return (
+                  <div key={t.id} className="rounded-xl bg-white p-5 shadow-sm cursor-pointer hover:shadow-md transition border-l-4 border-purple-300" onClick={function () { handleSelectTarea(t); }}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">[S] {t.titulo}</h4>
+                        <p className="text-xs text-gray-400">Por: {t.creadorNombre}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + (isPast ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700')}>
+                          {isPast ? 'Cerrado' : 'Disponible'}
+                        </span>
+                        <p className="mt-1 text-xs text-gray-400">Hasta: {new Date(t.fechaEntrega).toLocaleDateString('es-ES')}</p>
+                      </div>
+                    </div>
+                    {t.descripcion && <p className="mt-2 text-sm text-gray-600">{t.descripcion}</p>}
+                    <div className="mt-2 flex gap-3 text-xs text-gray-400">
+                      <span>Max: {t.puntuacionMaxima} pts</span>
+                      <span>{t.totalEntregas} intentos</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Simulacro detail view */}
+      {tab === 'simulacros' && selectedTarea && (
+        <div>
+          <button onClick={function () { setSelectedTarea(null); }} className="mb-4 text-sm text-purple-600 hover:text-purple-500">&lt;- Volver a simulacros</button>
+          <div className="mb-4 rounded-xl bg-white p-5 shadow-sm border-l-4 border-purple-300">
+            <h3 className="text-lg font-semibold text-gray-900">{selectedTarea.titulo}</h3>
+            <p className="text-sm text-gray-500">{selectedTarea.descripcion}</p>
+            <div className="mt-2 flex gap-4 text-xs text-gray-400">
+              <span>Fecha limite: {new Date(selectedTarea.fechaEntrega).toLocaleString('es-ES')}</span>
+              <span>Max: {selectedTarea.puntuacionMaxima} pts</span>
+            </div>
+            <p className="mt-2 text-xs text-purple-600 italic">Este simulacro no tiene impacto en la calificacion final</p>
+          </div>
+
+          <div className="mb-4 flex items-center justify-between">
+            <h4 className="font-semibold text-gray-900">Entregas ({entregas.length})</h4>
+            <button onClick={function () { setShowEntregaForm(!showEntregaForm); }} className="rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 transition">{showEntregaForm ? 'Cancelar' : 'Enviar intento'}</button>
+          </div>
+
+          {showEntregaForm && (
+            <form onSubmit={handleSubmitEntrega} className="mb-4 space-y-3 rounded-xl bg-white p-5 shadow-sm">
+              <textarea value={entregaForm.contenido} onChange={function (e) { setEntregaForm(Object.assign({}, entregaForm, { contenido: e.target.value })); }} placeholder="Tu respuesta..." rows={4} required className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500" />
+              <input type="text" value={entregaForm.urlAdjunto} onChange={function (e) { setEntregaForm(Object.assign({}, entregaForm, { urlAdjunto: e.target.value })); }} placeholder="URL adjunto (opcional)" className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500" />
+              <button type="submit" className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition">Enviar</button>
+            </form>
+          )}
+
+          {entregas.length === 0 ? (
+            <p className="rounded-xl bg-white p-6 text-center text-gray-500 shadow-sm">No hay entregas aun</p>
+          ) : (
+            <div className="space-y-3">
+              {entregas.map(function (en) {
+                return (
+                  <div key={en.id} className="rounded-xl bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{en.estudianteNombre}</p>
+                        <p className="text-xs text-gray-400">{new Date(en.fechaEntrega).toLocaleString('es-ES')}</p>
+                      </div>
+                      {en.calificacion !== null ? (
+                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-sm font-semibold text-purple-800">{en.calificacion}/{selectedTarea.puntuacionMaxima}</span>
+                      ) : canManageContent ? (
+                        <button onClick={function () { handleCalificar(en.id); }} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100">Calificar</button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Pendiente</span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm text-gray-600 whitespace-pre-wrap">{en.contenido}</p>
+                    {en.urlAdjunto && <a href={en.urlAdjunto} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-indigo-600">[Adjunto]</a>}
+                    {en.comentarioProfesor && <p className="mt-2 rounded bg-blue-50 p-2 text-sm text-blue-700">{en.comentarioProfesor}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ===== FORO TAB ===== */}
       {tab === 'foro' && !selectedTema && (
         <div>
@@ -734,16 +1034,41 @@ export default function AsignaturaDetailPage() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {grupos.map(function (g) {
+                var isMember = meId !== null && g.miembroIds && g.miembroIds.indexOf(meId) !== -1;
                 return (
-                  <div key={g.id} className="rounded-xl bg-white p-5 shadow-sm">
+                  <div key={g.id} className={'rounded-xl bg-white p-5 shadow-sm' + (g.inscribible ? ' border-l-4 border-green-400' : '')}>
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-semibold text-gray-900">{g.nombre}</h4>
                         <span className={'mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ' + (g.tipo === 'TEORIA' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')}>{g.tipo === 'TEORIA' ? 'Teoria' : 'Practica'}</span>
+                        {g.inscribible && <span className="ml-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Inscripciones abiertas</span>}
+                        {!g.inscribible && <span className="ml-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Inscripciones cerradas</span>}
                       </div>
-                      {canManageContent && <button onClick={function () { gruposApi.delete(g.id).then(loadGrupos); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
+                      <div className="flex flex-col items-end gap-1">
+                        {canManageContent && (
+                          <button onClick={function () { gruposApi.toggleInscribible(g.id).then(loadGrupos); }} className={'rounded px-2 py-1 text-xs transition ' + (g.inscribible ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100')}>
+                            {g.inscribible ? 'Cerrar inscripcion' : 'Abrir inscripcion'}
+                          </button>
+                        )}
+                        {canManageContent && <button onClick={function () { gruposApi.delete(g.id).then(loadGrupos); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
+                      </div>
                     </div>
                     <p className="mt-2 text-xs text-gray-400">{g.miembroIds ? g.miembroIds.length : 0} miembros</p>
+                    {/* Student self-enrollment */}
+                    {isEstudiante && g.inscribible && !isMember && (
+                      <button onClick={function () { gruposApi.selfEnrol(g.id).then(loadGrupos).catch(function (err) { alert(err.response && err.response.data && err.response.data.message || 'Error al inscribirse'); }); }} className="mt-2 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition">
+                        Inscribirse
+                      </button>
+                    )}
+                    {isEstudiante && isMember && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">Inscrito</span>
+                        <button onClick={function () { gruposApi.selfUnenrol(g.id).then(loadGrupos); }} className="text-xs text-red-500 hover:text-red-700">Desinscribirse</button>
+                      </div>
+                    )}
+                    {isEstudiante && !g.inscribible && !isMember && (
+                      <p className="mt-2 text-xs text-gray-400 italic">El profesor no ha habilitado inscripciones para este grupo</p>
+                    )}
                   </div>
                 );
               })}

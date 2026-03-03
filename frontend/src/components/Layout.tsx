@@ -3,13 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useState } from 'react';
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: '🏠' },
-  { to: '/asignaturas', label: 'Asignaturas', icon: '📚' },
-  { to: '/usuarios', label: 'Usuarios', icon: '👥' },
-  { to: '/clases', label: 'Clases', icon: '📅' },
-  { to: '/valoraciones', label: 'Valoraciones', icon: '⭐' },
-  { to: '/materiales', label: 'Materiales', icon: '📂' },
+const allNavItems = [
+  { to: '/', label: 'Dashboard', icon: '🏠', roles: null },        // everyone
+  { to: '/asignaturas', label: 'Asignaturas', icon: '📚', roles: null },
+  { to: '/usuarios', label: 'Usuarios', icon: '👥', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
+  { to: '/clases', label: 'Clases', icon: '📅', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
+  { to: '/valoraciones', label: 'Valoraciones', icon: '⭐', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
+  { to: '/materiales', label: 'Materiales', icon: '📂', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
 ];
 
 export default function Layout() {
@@ -17,6 +17,12 @@ export default function Layout() {
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Filter nav items by role
+  const navItems = allNavItems.filter(function (item) {
+    if (!item.roles) return true;
+    return user && item.roles.indexOf(user.role) !== -1;
+  });
 
   const handleLogout = () => {
     logout();

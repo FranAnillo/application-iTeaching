@@ -42,6 +42,11 @@ public class Tarea {
     @Column(name = "puntuacion_maxima")
     private Double puntuacionMaxima = 10.0;
 
+    /** Type: regular assignment, graded evaluation, or practice mock exam. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_tarea", nullable = false)
+    private TipoTarea tipoTarea = TipoTarea.TAREA;
+
     @ManyToOne
     @JoinColumn(name = "asignatura_id", nullable = false)
     private Asignatura asignatura;
@@ -52,4 +57,10 @@ public class Tarea {
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "tarea")
     private Set<Entrega> entregas = new HashSet<>();
+
+    public enum TipoTarea {
+        TAREA,       // regular assignment
+        EVALUACION,  // graded evaluation
+        SIMULACRO    // practice / mock exam (no grade impact)
+    }
 }

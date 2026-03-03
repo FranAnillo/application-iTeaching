@@ -52,6 +52,9 @@ public class TareaService {
         t.setFechaCreacion(LocalDateTime.now());
         t.setFechaEntrega(LocalDateTime.parse(dto.getFechaEntrega()));
         t.setPuntuacionMaxima(dto.getPuntuacionMaxima() != null ? dto.getPuntuacionMaxima() : 10.0);
+        t.setTipoTarea(dto.getTipoTarea() != null
+                ? Tarea.TipoTarea.valueOf(dto.getTipoTarea())
+                : Tarea.TipoTarea.TAREA);
         t.setAsignatura(asignatura);
         t.setCreador(creador);
 
@@ -73,6 +76,7 @@ public class TareaService {
         dto.setFechaCreacion(t.getFechaCreacion().toString());
         dto.setFechaEntrega(t.getFechaEntrega().toString());
         dto.setPuntuacionMaxima(t.getPuntuacionMaxima());
+        dto.setTipoTarea(t.getTipoTarea() != null ? t.getTipoTarea().name() : "TAREA");
         dto.setAsignaturaId(t.getAsignatura().getId());
         dto.setAsignaturaNombre(t.getAsignatura().getNombre());
         dto.setCreadorId(t.getCreador().getId());

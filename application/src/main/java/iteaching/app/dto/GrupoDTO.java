@@ -15,6 +15,7 @@ public class GrupoDTO {
     @NotBlank
     private String nombre;
     private String tipo; // TEORIA or PRACTICA
+    private boolean inscribible;
     private Long asignaturaId;
     private String asignaturaNombre;
     private Set<Long> miembroIds;

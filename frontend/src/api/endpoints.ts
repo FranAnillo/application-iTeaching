@@ -71,6 +71,10 @@ export const clasesApi = {
   create: (data: ClaseCreateRequest) => api.post<Clase>('/clases', data),
   updateEstado: (id: number, estado: string) => api.patch<Clase>(`/clases/${id}/estado?estado=${estado}`),
   delete: (id: number) => api.delete(`/clases/${id}`),
+  descargarHorarioPdf: (asignaturaId: number) =>
+    api.get(`/clases/pdf/asignatura/${asignaturaId}`, { responseType: 'blob' }),
+  descargarHorarioCompletoPdf: (asignaturaId: number) =>
+    api.get(`/clases/pdf/asignatura/${asignaturaId}/completo`, { responseType: 'blob' }),
 };
 
 // ===== Valoraciones (anónimas) =====
@@ -148,6 +152,12 @@ export const gruposApi = {
     api.post<Grupo>(`/grupos/${grupoId}/miembros/${personaId}`),
   removeMiembro: (grupoId: number, personaId: number) =>
     api.delete<Grupo>(`/grupos/${grupoId}/miembros/${personaId}`),
+  toggleInscribible: (grupoId: number) =>
+    api.patch<Grupo>(`/grupos/${grupoId}/inscribible`),
+  selfEnrol: (grupoId: number) =>
+    api.post<Grupo>(`/grupos/${grupoId}/inscribirse`),
+  selfUnenrol: (grupoId: number) =>
+    api.delete<Grupo>(`/grupos/${grupoId}/desinscribirse`),
 };
 
 // ===== Carpetas =====

@@ -31,6 +31,10 @@ public class Grupo {
     @Column(nullable = false)
     private TipoGrupo tipo = TipoGrupo.TEORIA;
 
+    /** Whether students can self-enrol into this group (professor toggles this). */
+    @Column(nullable = false)
+    private boolean inscribible = false;
+
     @ManyToOne
     @JoinColumn(name = "asignatura_id", nullable = false)
     private Asignatura asignatura;

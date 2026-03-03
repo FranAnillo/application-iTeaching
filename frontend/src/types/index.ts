@@ -100,6 +100,7 @@ export interface Grupo {
   id: number;
   nombre: string;
   tipo: string; // TEORIA | PRACTICA
+  inscribible: boolean;
   asignaturaId: number;
   asignaturaNombre: string;
   miembroIds: number[];
@@ -136,6 +137,7 @@ export interface Tarea {
   fechaCreacion: string;
   fechaEntrega: string;
   puntuacionMaxima: number;
+  tipoTarea: string; // TAREA | EVALUACION | SIMULACRO
   asignaturaId: number;
   asignaturaNombre: string;
   creadorId: number;

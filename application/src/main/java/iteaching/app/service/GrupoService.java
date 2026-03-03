@@ -50,6 +50,7 @@ public class GrupoService {
         g.setTipo(dto.getTipo() != null
                 ? Grupo.TipoGrupo.valueOf(dto.getTipo())
                 : Grupo.TipoGrupo.TEORIA);
+        g.setInscribible(dto.isInscribible());
         g.setAsignatura(asignatura);
 
         return toDTO(grupoRepository.save(g));
@@ -63,6 +64,7 @@ public class GrupoService {
         if (dto.getTipo() != null) {
             g.setTipo(Grupo.TipoGrupo.valueOf(dto.getTipo()));
         }
+        g.setInscribible(dto.isInscribible());
         return toDTO(grupoRepository.save(g));
     }
 
@@ -91,6 +93,37 @@ public class GrupoService {
         return toDTO(grupoRepository.save(g));
     }
 
+    @Transactional
+    public GrupoDTO toggleInscribible(Long grupoId) {
+        Grupo g = grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+        g.setInscribible(!g.isInscribible());
+        return toDTO(grupoRepository.save(g));
+    }
+
+    @Transactional
+    public GrupoDTO selfEnrol(Long grupoId, String username) {
+        Grupo g = grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+        if (!g.isInscribible()) {
+            throw new RuntimeException("El profesor no ha habilitado inscripciones para este grupo");
+        }
+        Persona p = personaRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        g.getMiembros().add(p);
+        return toDTO(grupoRepository.save(g));
+    }
+
+    @Transactional
+    public GrupoDTO selfUnenrol(Long grupoId, String username) {
+        Grupo g = grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
+        Persona p = personaRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        g.getMiembros().removeIf(m -> m.getId().equals(p.getId()));
+        return toDTO(grupoRepository.save(g));
+    }
+
     private GrupoDTO toDTO(Grupo g) {
         Set<Long> miembroIds = g.getMiembros() != null
                 ? g.getMiembros().stream().map(Persona::getId).collect(Collectors.toSet())
@@ -99,6 +132,7 @@ public class GrupoService {
         dto.setId(g.getId());
         dto.setNombre(g.getNombre());
         dto.setTipo(g.getTipo().name());
+        dto.setInscribible(g.isInscribible());
         dto.setAsignaturaId(g.getAsignatura().getId());
         dto.setAsignaturaNombre(g.getAsignatura().getNombre());
         dto.setMiembroIds(miembroIds);

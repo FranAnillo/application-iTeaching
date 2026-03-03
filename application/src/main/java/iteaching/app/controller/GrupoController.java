@@ -5,6 +5,7 @@ import iteaching.app.service.GrupoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,5 +59,24 @@ public class GrupoController {
     @DeleteMapping("/{grupoId}/miembros/{personaId}")
     public ResponseEntity<GrupoDTO> removeMiembro(@PathVariable Long grupoId, @PathVariable Long personaId) {
         return ResponseEntity.ok(grupoService.removeMiembro(grupoId, personaId));
+    }
+
+    /** Professor / admin toggle inscribible flag */
+    @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
+    @PatchMapping("/{grupoId}/inscribible")
+    public ResponseEntity<GrupoDTO> toggleInscribible(@PathVariable Long grupoId) {
+        return ResponseEntity.ok(grupoService.toggleInscribible(grupoId));
+    }
+
+    /** Student self-enrol */
+    @PostMapping("/{grupoId}/inscribirse")
+    public ResponseEntity<GrupoDTO> selfEnrol(@PathVariable Long grupoId, Authentication auth) {
+        return ResponseEntity.ok(grupoService.selfEnrol(grupoId, auth.getName()));
+    }
+
+    /** Student self-unenrol */
+    @DeleteMapping("/{grupoId}/desinscribirse")
+    public ResponseEntity<GrupoDTO> selfUnenrol(@PathVariable Long grupoId, Authentication auth) {
+        return ResponseEntity.ok(grupoService.selfUnenrol(grupoId, auth.getName()));
     }
 }

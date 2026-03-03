@@ -13,4 +13,5 @@ public interface ClaseRepository extends JpaRepository<Clase, Long> {
     List<Clase> findByProfesorUsername(String username);
     List<Clase> findByEstadoClase(EstadoClase estadoClase);
     List<Clase> findByAsignaturaId(Long asignaturaId);
+    List<Clase> findByAsignaturaIdAndAlumnoId(Long asignaturaId, Long alumnoId);
 }

@@ -18,6 +18,7 @@ public class TareaDTO {
     @NotNull
     private String fechaEntrega;
     private Double puntuacionMaxima;
+    private String tipoTarea; // TAREA, EVALUACION, SIMULACRO
     @NotNull
     private Long asignaturaId;
     private String asignaturaNombre;
