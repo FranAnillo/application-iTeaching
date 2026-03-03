@@ -20,22 +20,15 @@ export interface AuthResponse {
 }
 
 // ===== Entities =====
-export interface Estudiante {
+export interface Usuario {
   id: number;
+  username: string;
   nombre: string;
   apellido: string;
   email: string;
   telefono: string;
-}
-
-export interface Profesor {
-  id: number;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono: string;
+  role: string;
   puntuacion: number;
-  division: number;
   avatar: string | null;
 }
 
@@ -43,12 +36,11 @@ export interface Asignatura {
   id: number;
   nombre: string;
   descripcion: string;
-  tituloAnuncio?: string;
   url?: string;
-  precio: number;
+  creadorId?: number;
+  creadorNombre?: string;
+  profesorIds: number[];
   estudianteIds: number[];
-  profesorId?: number;
-  profesorNombre?: string;
 }
 
 export interface Clase {
@@ -78,12 +70,115 @@ export interface Valoracion {
   id: number;
   puntuacion: number;
   comentario: string;
+  puntosMejora: string;
+  fechaCreacion: string;
   profesorId: number;
   profesorNombre: string;
   asignaturaId: number;
   asignaturaNombre: string;
-  alumnoId: number;
-  alumnoNombre: string;
+  // Anónima: sin datos del alumno
+}
+
+// ===== Material =====
+export interface Material {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  urlRecurso: string;
+  tipo: string;
+  fechaCreacion: string;
+  autorId: number;
+  autorNombre: string;
+  asignaturaId: number | null;
+  asignaturaNombre: string | null;
+  carpetaId: number | null;
+  carpetaNombre: string | null;
+}
+
+// ===== Grupo (Group) =====
+export interface Grupo {
+  id: number;
+  nombre: string;
+  tipo: string; // TEORIA | PRACTICA
+  asignaturaId: number;
+  asignaturaNombre: string;
+  miembroIds: number[];
+}
+
+// ===== Carpeta (Folder) =====
+export interface Carpeta {
+  id: number;
+  nombre: string;
+  asignaturaId: number;
+  asignaturaNombre: string;
+  padreId: number | null;
+  padreNombre: string | null;
+}
+
+// ===== Anuncio (Announcement) =====
+export interface Anuncio {
+  id: number;
+  titulo: string;
+  contenido: string;
+  fechaCreacion: string;
+  importante: boolean;
+  asignaturaId: number;
+  asignaturaNombre: string;
+  autorId: number;
+  autorNombre: string;
+}
+
+// ===== Tarea (Assignment) =====
+export interface Tarea {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  fechaCreacion: string;
+  fechaEntrega: string;
+  puntuacionMaxima: number;
+  asignaturaId: number;
+  asignaturaNombre: string;
+  creadorId: number;
+  creadorNombre: string;
+  totalEntregas: number;
+}
+
+// ===== Entrega (Submission) =====
+export interface Entrega {
+  id: number;
+  contenido: string;
+  urlAdjunto: string;
+  fechaEntrega: string;
+  calificacion: number | null;
+  comentarioProfesor: string | null;
+  tareaId: number;
+  tareaTitulo: string;
+  estudianteId: number;
+  estudianteNombre: string;
+}
+
+// ===== Foro (Forum) =====
+export interface ForoTema {
+  id: number;
+  titulo: string;
+  contenido: string;
+  fechaCreacion: string;
+  fijado: boolean;
+  asignaturaId: number;
+  asignaturaNombre: string;
+  autorId: number;
+  autorNombre: string;
+  totalRespuestas: number;
+  respuestas: ForoRespuesta[];
+}
+
+export interface ForoRespuesta {
+  id: number;
+  contenido: string;
+  fechaCreacion: string;
+  temaId: number;
+  autorId: number;
+  autorNombre: string;
 }
 
 // ===== API Error =====

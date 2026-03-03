@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 
@@ -8,13 +9,14 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import AsignaturasPage from './pages/AsignaturasPage';
 import AsignaturaDetailPage from './pages/AsignaturaDetailPage';
-import ProfesoresPage from './pages/ProfesoresPage';
-import EstudiantesPage from './pages/EstudiantesPage';
+import UsuariosPage from './pages/UsuariosPage';
 import ClasesPage from './pages/ClasesPage';
 import ValoracionesPage from './pages/ValoracionesPage';
+import MaterialesPage from './pages/MaterialesPage';
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -33,13 +35,14 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="asignaturas" element={<AsignaturasPage />} />
             <Route path="asignaturas/:id" element={<AsignaturaDetailPage />} />
-            <Route path="profesores" element={<ProfesoresPage />} />
-            <Route path="estudiantes" element={<EstudiantesPage />} />
+            <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="clases" element={<ClasesPage />} />
             <Route path="valoraciones" element={<ValoracionesPage />} />
+            <Route path="materiales" element={<MaterialesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

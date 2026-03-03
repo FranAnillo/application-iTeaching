@@ -1,58 +1,61 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { asignaturasApi, clasesApi, estudiantesApi, profesoresApi } from '../api/endpoints';
+import { asignaturasApi, clasesApi, usuariosApi, materialesApi } from '../api/endpoints';
+import type { Asignatura } from '../types';
 
 interface Stats {
   asignaturas: number;
-  estudiantes: number;
-  profesores: number;
+  usuarios: number;
   clases: number;
+  materiales: number;
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<Stats>({ asignaturas: 0, estudiantes: 0, profesores: 0, clases: 0 });
-  const [loading, setLoading] = useState(true);
+  var auth = useAuth();
+  var user = auth.user;
+  var statsState = useState<Stats>({ asignaturas: 0, usuarios: 0, clases: 0, materiales: 0 });
+  var stats = statsState[0];
+  var setStats = statsState[1];
+  var loadingState = useState(true);
+  var loading = loadingState[0];
+  var setLoading = loadingState[1];
+  var cursosState = useState<Asignatura[]>([]);
+  var cursos = cursosState[0];
+  var setCursos = cursosState[1];
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [a, e, p, c] = await Promise.all([
-          asignaturasApi.getAll(),
-          estudiantesApi.getAll(),
-          profesoresApi.getAll(),
-          clasesApi.getAll(),
-        ]);
-        setStats({
-          asignaturas: a.data.length,
-          estudiantes: e.data.length,
-          profesores: p.data.length,
-          clases: c.data.length,
-        });
-      } catch {
-        // silently fail
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  useEffect(function () {
+    Promise.all([
+      asignaturasApi.getAll(),
+      usuariosApi.getAll(),
+      clasesApi.getAll(),
+      materialesApi.getAll(),
+    ]).then(function (results) {
+      var allCursos = results[0].data;
+      setStats({
+        asignaturas: allCursos.length,
+        usuarios: results[1].data.length,
+        clases: results[2].data.length,
+        materiales: results[3].data.length,
+      });
+      setCursos(allCursos);
+    }).catch(function () {}).finally(function () { setLoading(false); });
   }, []);
 
-  const cards = [
-    { label: 'Asignaturas', value: stats.asignaturas, to: '/asignaturas', color: 'bg-blue-500', icon: '📚' },
-    { label: 'Profesores', value: stats.profesores, to: '/profesores', color: 'bg-green-500', icon: '👨‍🏫' },
-    { label: 'Estudiantes', value: stats.estudiantes, to: '/estudiantes', color: 'bg-amber-500', icon: '🎓' },
-    { label: 'Clases', value: stats.clases, to: '/clases', color: 'bg-purple-500', icon: '📅' },
+  var cards = [
+    { label: 'Cursos', value: stats.asignaturas, to: '/asignaturas', color: 'bg-blue-500' },
+    { label: 'Usuarios', value: stats.usuarios, to: '/usuarios', color: 'bg-green-500' },
+    { label: 'Clases', value: stats.clases, to: '/clases', color: 'bg-purple-500' },
+    { label: 'Materiales', value: stats.materiales, to: '/materiales', color: 'bg-teal-500' },
   ];
 
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">
-          ¡Hola, {user?.username}!
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Hola, {user ? user.username : ''}!
         </h2>
-        <p className="text-gray-500">Bienvenido al panel de iTeaching</p>
+        <p className="text-gray-500 dark:text-gray-400">Bienvenido al Aula Virtual iTeaching 2.0</p>
       </div>
 
       {loading ? (
@@ -60,24 +63,53 @@ export default function DashboardPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((card) => (
-            <Link
-              key={card.label}
-              to={card.to}
-              className="rounded-xl bg-white p-6 shadow-sm hover:shadow-md transition"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">{card.label}</p>
-                  <p className="mt-1 text-3xl font-bold text-gray-900">{card.value}</p>
-                </div>
-                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${card.color} text-2xl text-white`}>
-                  {card.icon}
-                </div>
-              </div>
-            </Link>
-          ))}
+        <div>
+          {/* Stats cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {cards.map(function (card) {
+              return (
+                <Link
+                  key={card.label}
+                  to={card.to}
+                  className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md transition"
+                >
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.label}</p>
+                  <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Mis Cursos */}
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Cursos</h3>
+            {user && user.role === 'ROLE_ADMIN' && (
+              <Link to="/asignaturas/new" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">+ Nuevo curso</Link>
+            )}
+          </div>
+          {cursos.length === 0 ? (
+            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay cursos disponibles. Crea tu primer curso.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {cursos.map(function (c) {
+                return (
+                  <Link key={c.id} to={'/asignaturas/' + c.id} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition overflow-hidden">
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
+                      <h4 className="font-bold text-white text-lg">{c.nombre}</h4>
+                      {c.creadorNombre && <p className="text-indigo-100 text-sm">{c.creadorNombre}</p>}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{c.descripcion || 'Sin descripcion'}</p>
+                      <div className="mt-3 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                        <span>{c.estudianteIds ? c.estudianteIds.length : 0} estudiantes</span>
+                        <span className="text-indigo-600 font-medium">Entrar &gt;</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

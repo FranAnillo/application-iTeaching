@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { clasesApi, estudiantesApi, profesoresApi, asignaturasApi } from '../api/endpoints';
-import type { Clase, Estudiante, Profesor, Asignatura } from '../types';
+import { clasesApi, usuariosApi, asignaturasApi } from '../api/endpoints';
+import type { Clase, Usuario, Asignatura } from '../types';
 
 const estadoBadge: Record<string, string> = {
   SOLICITADA: 'bg-yellow-100 text-yellow-800',
@@ -14,8 +14,7 @@ export default function ClasesPage() {
   const [items, setItems] = useState<Clase[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
-  const [profesores, setProfesores] = useState<Profesor[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [asignaturas, setAsignaturas] = useState<Asignatura[]>([]);
   const [form, setForm] = useState({
     horaComienzo: '',
@@ -37,12 +36,10 @@ export default function ClasesPage() {
   useEffect(() => {
     loadClases();
     Promise.all([
-      estudiantesApi.getAll(),
-      profesoresApi.getAll(),
+      usuariosApi.getAll(),
       asignaturasApi.getAll(),
-    ]).then(([e, p, a]) => {
-      setEstudiantes(e.data);
-      setProfesores(p.data);
+    ]).then(([u, a]) => {
+      setUsuarios(u.data);
       setAsignaturas(a.data);
     });
   }, []);
@@ -119,7 +116,7 @@ export default function ClasesPage() {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Estudiante</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Alumno</label>
               <select
                 value={form.alumnoId}
                 onChange={(e) => setForm({ ...form, alumnoId: Number(e.target.value) })}
@@ -127,8 +124,8 @@ export default function ClasesPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value={0} disabled>Seleccionar...</option>
-                {estudiantes.map((e) => (
-                  <option key={e.id} value={e.id}>{e.nombre} {e.apellido}</option>
+                {usuarios.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nombre} {u.apellido}</option>
                 ))}
               </select>
             </div>
@@ -141,8 +138,8 @@ export default function ClasesPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value={0} disabled>Seleccionar...</option>
-                {profesores.map((p) => (
-                  <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
+                {usuarios.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nombre} {u.apellido}</option>
                 ))}
               </select>
             </div>

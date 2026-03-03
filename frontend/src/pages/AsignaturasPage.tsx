@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { asignaturasApi } from '../api/endpoints';
 import type { Asignatura } from '../types';
 
 export default function AsignaturasPage() {
+  var authCtx = useAuth();
+  var user = authCtx.user;
+  var isAdmin = user && user.role === 'ROLE_ADMIN';
   const [items, setItems] = useState<Asignatura[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -42,12 +46,12 @@ export default function AsignaturasPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Asignaturas</h2>
-        <Link
+        {isAdmin && <Link
           to="/asignaturas/new"
           className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
         >
           + Nueva asignatura
-        </Link>
+        </Link>}
       </div>
 
       {/* Search bar */}
@@ -78,15 +82,12 @@ export default function AsignaturasPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((a) => (
             <div key={a.id} className="rounded-xl bg-white p-5 shadow-sm hover:shadow-md transition">
-              <div className="mb-3 flex items-start justify-between">
+              <div className="mb-3">
                 <h3 className="font-semibold text-gray-900">{a.nombre}</h3>
-                <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
-                  {a.precio?.toFixed(2)} €
-                </span>
               </div>
               <p className="mb-3 line-clamp-2 text-sm text-gray-500">{a.descripcion || 'Sin descripción'}</p>
-              {a.profesorNombre && (
-                <p className="mb-3 text-xs text-gray-400">Profesor: {a.profesorNombre}</p>
+              {a.creadorNombre && (
+                <p className="mb-3 text-xs text-gray-400">Creador: {a.creadorNombre}</p>
               )}
               <div className="flex gap-2">
                 <Link
@@ -95,12 +96,12 @@ export default function AsignaturasPage() {
                 >
                   Ver detalle
                 </Link>
-                <button
+                {isAdmin && <button
                   onClick={() => handleDelete(a.id)}
                   className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition"
                 >
                   Eliminar
-                </button>
+                </button>}
               </div>
             </div>
           ))}
