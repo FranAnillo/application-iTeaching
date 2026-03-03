@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java / Maven
+application/target/
+*.class
+*.jar
+*.war
+
+# Logs
+*.log
+npm-debug.log*
