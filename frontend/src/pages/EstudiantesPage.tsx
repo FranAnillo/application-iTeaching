@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { estudiantesApi } from '../../api/endpoints';
-import type { Estudiante } from '../../types';
+import { estudiantesApi } from '../api/endpoints';
+import type { Estudiante } from '../types';
 
 export default function EstudiantesPage() {
   const [items, setItems] = useState<Estudiante[]>([]);

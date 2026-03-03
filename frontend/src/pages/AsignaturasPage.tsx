@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { asignaturasApi } from '../../api/endpoints';
-import type { Asignatura } from '../../types';
+import { asignaturasApi } from '../api/endpoints';
+import type { Asignatura } from '../types';
 
 export default function AsignaturasPage() {
   const [items, setItems] = useState<Asignatura[]>([]);

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { asignaturasApi, profesoresApi } from '../../api/endpoints';
-import type { Asignatura, Profesor } from '../../types';
+import { asignaturasApi, profesoresApi } from '../api/endpoints';
+import type { Asignatura, Profesor } from '../types';
 
 export default function AsignaturaDetailPage() {
   const { id } = useParams<{ id: string }>();

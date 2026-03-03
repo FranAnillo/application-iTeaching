@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { valoracionesApi, profesoresApi, asignaturasApi } from '../../api/endpoints';
-import type { Valoracion, Profesor, Asignatura } from '../../types';
+import { valoracionesApi, profesoresApi, asignaturasApi } from '../api/endpoints';
+import type { Valoracion, Profesor, Asignatura } from '../types';
 
 export default function ValoracionesPage() {
   const [items, setItems] = useState<Valoracion[]>([]);

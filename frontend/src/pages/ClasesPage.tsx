@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { clasesApi, estudiantesApi, profesoresApi, asignaturasApi } from '../../api/endpoints';
-import type { Clase, Estudiante, Profesor, Asignatura } from '../../types';
+import { clasesApi, estudiantesApi, profesoresApi, asignaturasApi } from '../api/endpoints';
+import type { Clase, Estudiante, Profesor, Asignatura } from '../types';
 
 const estadoBadge: Record<string, string> = {
   SOLICITADA: 'bg-yellow-100 text-yellow-800',

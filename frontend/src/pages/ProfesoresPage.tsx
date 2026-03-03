@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { profesoresApi } from '../../api/endpoints';
-import type { Profesor } from '../../types';
+import { profesoresApi } from '../api/endpoints';
+import type { Profesor } from '../types';
 
 export default function ProfesoresPage() {
   const [items, setItems] = useState<Profesor[]>([]);
