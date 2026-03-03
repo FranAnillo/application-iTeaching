@@ -1,10 +1,19 @@
 package iteaching.app.service;
 
 import iteaching.app.Models.Persona;
+import iteaching.app.Models.Usuarios;
+import iteaching.app.dto.CsvImportResult;
 import iteaching.app.dto.UsuarioDTO;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.repository.UsuarioRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,9 +21,15 @@ import java.util.stream.Collectors;
 public class PersonaService {
 
     private final PersonaRepository personaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public PersonaService(PersonaRepository personaRepository) {
+    public PersonaService(PersonaRepository personaRepository,
+                          UsuarioRepository usuarioRepository,
+                          PasswordEncoder passwordEncoder) {
         this.personaRepository = personaRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<UsuarioDTO> findAll() {
@@ -42,6 +57,90 @@ public class PersonaService {
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Importa usuarios desde un CSV.
+     * Formato: username;password;nombre;apellido;email;telefono;rol
+     * El rol es opcional y por defecto ROLE_ESTUDIANTE.
+     * Valores válidos: ESTUDIANTE, PROFESOR, ADMIN (con o sin prefijo ROLE_).
+     */
+    @Transactional
+    public CsvImportResult importFromCsv(InputStream inputStream) {
+        List<UsuarioDTO> imported = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        int lineNum = 0;
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
+            String line;
+            boolean header = true;
+            while ((line = reader.readLine()) != null) {
+                lineNum++;
+                if (header) { header = false; continue; }
+                if (line.trim().isEmpty()) continue;
+
+                String[] parts = line.split(";", -1);
+                if (parts.length < 5) {
+                    errors.add("Linea " + lineNum + ": formato invalido (se requieren al menos 5 campos: username;password;nombre;apellido;email)");
+                    continue;
+                }
+
+                String username = parts[0].trim();
+                String password = parts[1].trim();
+                String nombre = parts[2].trim();
+                String apellido = parts[3].trim();
+                String email = parts[4].trim();
+                String telefono = parts.length > 5 ? parts[5].trim() : "";
+                String rolStr = parts.length > 6 ? parts[6].trim().toUpperCase() : "";
+
+                if (username.isEmpty() || password.isEmpty() || nombre.isEmpty()
+                        || apellido.isEmpty() || email.isEmpty()) {
+                    errors.add("Linea " + lineNum + ": campos obligatorios vacios (" + username + ")");
+                    continue;
+                }
+
+                if (usuarioRepository.existsByUsername(username)) {
+                    errors.add("Linea " + lineNum + ": el usuario '" + username + "' ya existe");
+                    continue;
+                }
+
+                if (personaRepository.existsByEmail(email)) {
+                    errors.add("Linea " + lineNum + ": el email '" + email + "' ya esta en uso");
+                    continue;
+                }
+
+                Usuarios.Role role = Usuarios.Role.ROLE_ESTUDIANTE;
+                if (!rolStr.isEmpty()) {
+                    try {
+                        if (!rolStr.startsWith("ROLE_")) rolStr = "ROLE_" + rolStr;
+                        role = Usuarios.Role.valueOf(rolStr);
+                    } catch (IllegalArgumentException e) {
+                        errors.add("Linea " + lineNum + ": rol invalido '" + parts[6].trim() + "' (usar: ESTUDIANTE, PROFESOR o ADMIN)");
+                        continue;
+                    }
+                }
+
+                Persona persona = new Persona();
+                persona.setUsername(username);
+                persona.setPassword(passwordEncoder.encode(password));
+                persona.setNombre(nombre);
+                persona.setApellido(apellido);
+                persona.setEmail(email);
+                persona.setTelefono(telefono);
+                persona.setEnabled(true);
+                persona.setRole(role);
+
+                try {
+                    imported.add(toDTO(personaRepository.save(persona)));
+                } catch (Exception e) {
+                    errors.add("Linea " + lineNum + ": error al guardar '" + username + "' - " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al procesar el CSV: " + e.getMessage());
+        }
+
+        return new CsvImportResult(imported, errors);
     }
 
     private UsuarioDTO toDTO(Persona p) {

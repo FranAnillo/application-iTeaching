@@ -30,6 +30,13 @@ export const usuariosApi = {
   getById: (id: number) => api.get<Usuario>(`/usuarios/${id}`),
   me: () => api.get<Usuario>('/usuarios/me'),
   search: (q: string) => api.get<Usuario[]>(`/usuarios/search?q=${q}`),
+  importCsv: (file: File) => {
+    var formData = new FormData();
+    formData.append('file', file);
+    return api.post('/usuarios/import-csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // ===== Asignaturas =====
