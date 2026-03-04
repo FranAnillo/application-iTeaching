@@ -1,7 +1,9 @@
 package iteaching.app.config;
 
+import iteaching.app.Models.Logro;
 import iteaching.app.Models.Persona;
 import iteaching.app.Models.Usuarios;
+import iteaching.app.repository.LogroRepository;
 import iteaching.app.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +18,13 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LogroRepository logroRepository;
 
-    public DataSeeder(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public DataSeeder(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
+                      LogroRepository logroRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.logroRepository = logroRepository;
     }
 
     @Override
@@ -27,6 +32,7 @@ public class DataSeeder implements CommandLineRunner {
         createAdminIfNotExists();
         createProfesorIfNotExists();
         createEstudianteIfNotExists();
+        seedLogros();
     }
 
     private void createAdminIfNotExists() {
@@ -81,5 +87,32 @@ public class DataSeeder implements CommandLineRunner {
         } else {
             log.info("Cuenta de profesor ya existe");
         }
+    }
+
+    private void seedLogros() {
+        if (logroRepository.count() == 0) {
+            crearLogro("PRIMERA_ENTREGA", "Primera Entrega", "Realizaste tu primera entrega de tarea", "📝", "ACADEMICO", 1);
+            crearLogro("CINCO_ENTREGAS", "Estudiante Aplicado", "Completaste 5 entregas", "📚", "ACADEMICO", 5);
+            crearLogro("DIEZ_ENTREGAS", "Experto en Entregas", "Completaste 10 entregas", "🎯", "ACADEMICO", 10);
+            crearLogro("NOTA_PERFECTA", "Perfección", "Obtuviste la máxima calificación en una tarea", "⭐", "ACADEMICO", 1);
+            crearLogro("PRIMER_FORO", "Participativo", "Creaste tu primera respuesta en el foro", "💬", "SOCIAL", 1);
+            crearLogro("CINCO_FOROS", "Comunicador", "Participaste en 5 discusiones del foro", "🗣️", "SOCIAL", 5);
+            crearLogro("ASISTENCIA_PERFECTA", "Asistencia Perfecta", "100% de asistencia en un mes", "🏅", "ASISTENCIA", 1);
+            crearLogro("PRIMER_CURSO", "Bienvenido", "Te inscribiste en tu primer curso", "🎓", "ESPECIAL", 1);
+            crearLogro("TRES_CURSOS", "Multidisciplinar", "Estás inscrito en 3 cursos", "🌟", "ESPECIAL", 3);
+            crearLogro("VALORACION", "Crítico Constructivo", "Realizaste tu primera valoración", "⭐", "SOCIAL", 1);
+            log.info("Logros iniciales creados");
+        }
+    }
+
+    private void crearLogro(String codigo, String nombre, String descripcion, String icono, String categoria, int valorObjetivo) {
+        Logro logro = new Logro();
+        logro.setCodigo(codigo);
+        logro.setNombre(nombre);
+        logro.setDescripcion(descripcion);
+        logro.setIcono(icono);
+        logro.setCategoria(Logro.CategoriaLogro.valueOf(categoria));
+        logro.setValorObjetivo(valorObjetivo);
+        logroRepository.save(logro);
     }
 }

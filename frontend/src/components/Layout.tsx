@@ -1,11 +1,18 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { notificacionesApi } from '../api/endpoints';
+import type { Notificacion } from '../types';
 
 const allNavItems = [
-  { to: '/', label: 'Dashboard', icon: '🏠', roles: null },        // everyone
+  { to: '/', label: 'Dashboard', icon: '🏠', roles: null },
   { to: '/asignaturas', label: 'Asignaturas', icon: '📚', roles: null },
+  { to: '/calendario', label: 'Calendario', icon: '📆', roles: null },
+  { to: '/chat', label: 'Chat', icon: '🟢', roles: null },
+  { to: '/mensajes', label: 'Mensajes', icon: '💬', roles: null },
+  { to: '/calificaciones', label: 'Calificaciones', icon: '📊', roles: null },
+  { to: '/logros', label: 'Logros', icon: '🏆', roles: null },
   { to: '/usuarios', label: 'Usuarios', icon: '👥', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
   { to: '/clases', label: 'Clases', icon: '📅', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
   { to: '/valoraciones', label: 'Valoraciones', icon: '⭐', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
@@ -17,6 +24,45 @@ export default function Layout() {
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+
+  useEffect(function () {
+    loadNotifications();
+    var interval = setInterval(loadNotifications, 30000);
+    return function () { clearInterval(interval); };
+  }, []);
+
+  function loadNotifications() {
+    notificacionesApi.countNoLeidas().then(function (res) {
+      setNotifCount(res.data.count);
+    }).catch(function () {});
+  }
+
+  function openNotifications() {
+    setNotifOpen(!notifOpen);
+    if (!notifOpen) {
+      notificacionesApi.getNoLeidas().then(function (res) {
+        setNotificaciones(res.data);
+      }).catch(function () {});
+    }
+  }
+
+  function markAllRead() {
+    notificacionesApi.marcarTodasLeidas().then(function () {
+      setNotifCount(0);
+      setNotificaciones([]);
+      setNotifOpen(false);
+    }).catch(function () {});
+  }
+
+  function markOneRead(id: number) {
+    notificacionesApi.marcarLeida(id).then(function () {
+      setNotificaciones(notificaciones.filter(function (n) { return n.id !== id; }));
+      setNotifCount(Math.max(0, notifCount - 1));
+    }).catch(function () {});
+  }
 
   // Filter nav items by role
   const navItems = allNavItems.filter(function (item) {
@@ -102,6 +148,65 @@ export default function Layout() {
 
           {/* Spacer */}
           <div className="flex-1" />
+
+          {/* Notification bell */}
+          <div className="relative">
+            <button
+              onClick={openNotifications}
+              className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition relative"
+              title="Notificaciones"
+            >
+              <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {notifCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {notifCount > 9 ? '9+' : notifCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notification dropdown */}
+            {notifOpen && (
+              <div className="absolute right-0 top-12 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-hidden flex flex-col">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Notificaciones</h4>
+                  {notificaciones.length > 0 && (
+                    <button onClick={markAllRead} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                      Marcar todas como leídas
+                    </button>
+                  )}
+                </div>
+                <div className="overflow-y-auto flex-1">
+                  {notificaciones.length === 0 ? (
+                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-6">
+                      No hay notificaciones nuevas
+                    </p>
+                  ) : (
+                    notificaciones.slice(0, 10).map(function (n) {
+                      var iconMap: Record<string, string> = { INFO: 'ℹ️', ANUNCIO: '📢', TAREA: '📝', CALIFICACION: '📊', MENSAJE: '💬', LOGRO: '🏆' };
+                      return (
+                        <div
+                          key={n.id}
+                          className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                          onClick={function () { markOneRead(n.id); if (n.enlace) navigate(n.enlace); }}
+                        >
+                          <div className="flex items-start gap-2">
+                            <span className="text-sm">{iconMap[n.tipo] || 'ℹ️'}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{n.titulo}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{n.mensaje}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{n.fechaCreacion.substring(0, 16).replace('T', ' ')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Dark mode toggle */}
           <button

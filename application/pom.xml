@@ -28,6 +28,12 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!-- WebSocket (Chat en tiempo real) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
 		<!-- JPA & Database -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

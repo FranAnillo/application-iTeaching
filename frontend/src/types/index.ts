@@ -190,3 +190,91 @@ export interface ApiError {
   status: number;
   errors?: Record<string, string>;
 }
+
+// ===== Mensaje (Message) =====
+export interface Mensaje {
+  id: number;
+  contenido: string;
+  fechaEnvio: string;
+  leido: boolean;
+  remitenteId: number;
+  remitenteNombre: string;
+  destinatarioId: number;
+  destinatarioNombre: string;
+  asignaturaId: number | null;
+  asignaturaNombre: string | null;
+}
+
+// ===== Notificacion =====
+export interface Notificacion {
+  id: number;
+  titulo: string;
+  mensaje: string;
+  tipo: string;
+  fechaCreacion: string;
+  leida: boolean;
+  enlace: string | null;
+  usuarioId: number;
+}
+
+// ===== Asistencia (Attendance) =====
+export interface AsistenciaRecord {
+  id: number;
+  fecha: string;
+  estado: string;
+  observacion: string | null;
+  estudianteId: number;
+  estudianteNombre: string;
+  asignaturaId: number;
+  asignaturaNombre: string;
+  registradoPorId: number;
+  registradoPorNombre: string;
+}
+
+// ===== Progreso (Progress) =====
+export interface Progreso {
+  asignaturaId: number;
+  asignaturaNombre: string;
+  totalTareas: number;
+  tareasEntregadas: number;
+  tareasCalificadas: number;
+  promedioCalificaciones: number;
+  totalClases: number;
+  clasesAsistidas: number;
+  porcentajeAsistencia: number;
+  porcentajeProgreso: number;
+}
+
+// ===== Rubrica =====
+export interface Rubrica {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  tareaId: number;
+  tareaTitulo: string;
+  criterios: CriterioRubrica[];
+}
+
+export interface CriterioRubrica {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  puntuacionMaxima: number;
+  orden: number;
+  nivelExcelente: string;
+  nivelBueno: string;
+  nivelSuficiente: string;
+  nivelInsuficiente: string;
+}
+
+// ===== Logro (Achievement) =====
+export interface Logro {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  icono: string;
+  categoria: string;
+  valorObjetivo: number;
+  obtenido: boolean;
+}

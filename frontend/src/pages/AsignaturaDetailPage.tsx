@@ -13,10 +13,13 @@ import {
   carpetasApi,
   clasesApi,
   usuariosApi,
+  asistenciaApi,
+  progresoApi,
+  rubricasApi,
 } from '../api/endpoints';
-import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase } from '../types';
+import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase, AsistenciaRecord, Progreso, Rubrica, CriterioRubrica } from '../types';
 
-type Tab = 'info' | 'anuncios' | 'materiales' | 'horarios' | 'tareas' | 'evaluaciones' | 'simulacros' | 'foro' | 'grupos' | 'calificaciones';
+type Tab = 'info' | 'anuncios' | 'materiales' | 'horarios' | 'tareas' | 'evaluaciones' | 'simulacros' | 'foro' | 'grupos' | 'calificaciones' | 'asistencia' | 'progreso' | 'rubricas';
 
 var ALL_TABS: { key: Tab; label: string; icon: string; roles: string[] | null }[] = [
   { key: 'info', label: 'Informacion', icon: 'i', roles: null },
@@ -29,6 +32,9 @@ var ALL_TABS: { key: Tab; label: string; icon: string; roles: string[] | null }[
   { key: 'foro', label: 'Foro', icon: 'F', roles: null },
   { key: 'grupos', label: 'Grupos', icon: 'G', roles: null },
   { key: 'calificaciones', label: 'Calificaciones', icon: 'C', roles: null },
+  { key: 'asistencia', label: 'Asistencia', icon: 'A', roles: null },
+  { key: 'progreso', label: 'Progreso', icon: 'P', roles: null },
+  { key: 'rubricas', label: 'Rubricas', icon: 'R', roles: null },
 ];
 
 export default function AsignaturaDetailPage() {
@@ -182,6 +188,30 @@ export default function AsignaturaDetailPage() {
   var carpetaForm = carpetaFormState[0];
   var setCarpetaForm = carpetaFormState[1];
 
+  // Asistencia
+  var asistenciaState = useState<AsistenciaRecord[]>([]);
+  var asistenciaList = asistenciaState[0];
+  var setAsistenciaList = asistenciaState[1];
+  var asistenciaFechaState = useState(new Date().toISOString().split('T')[0]);
+  var asistenciaFecha = asistenciaFechaState[0];
+  var setAsistenciaFecha = asistenciaFechaState[1];
+
+  // Progreso
+  var progresoState = useState<Progreso | null>(null);
+  var progreso = progresoState[0];
+  var setProgreso = progresoState[1];
+
+  // Rubricas
+  var rubricasState = useState<Rubrica[]>([]);
+  var rubricasList = rubricasState[0];
+  var setRubricasList = rubricasState[1];
+  var showRubricaFormState = useState(false);
+  var showRubricaForm = showRubricaFormState[0];
+  var setShowRubricaForm = showRubricaFormState[1];
+  var rubricaFormState = useState({ nombre: '', descripcion: '', tareaId: 0, criterios: [] as { nombre: string; descripcion: string; puntuacionMaxima: number; nivelExcelente: string; nivelBueno: string; nivelSuficiente: string; nivelInsuficiente: string }[] });
+  var rubricaForm = rubricaFormState[0];
+  var setRubricaForm = rubricaFormState[1];
+
   // Role check
   var isAdmin = user && user.role === 'ROLE_ADMIN';
   var isProfesor = user && user.role === 'ROLE_PROFESOR';
@@ -225,6 +255,16 @@ export default function AsignaturaDetailPage() {
       entregasApi.getMisEntregas().then(function (r) { setMisEntregas(r.data); }).catch(function () {});
       valoracionesApi.getByAsignatura(numId).then(function (r) { setValoraciones(r.data); }).catch(function () {});
     }
+    if (tab === 'asistencia') {
+      asistenciaApi.getByAsignatura(numId).then(function (r) { setAsistenciaList(r.data); }).catch(function () {});
+    }
+    if (tab === 'progreso') {
+      progresoApi.getByAsignatura(numId).then(function (r) { setProgreso(r.data); }).catch(function () {});
+    }
+    if (tab === 'rubricas') {
+      tareasApi.getByAsignatura(numId).then(function (r) { setTareas(r.data); }).catch(function () {});
+      loadRubricas(numId);
+    }
   }, [tab, id, isNew]);
 
   function update(field: string, value: any) { setForm(function (prev) { return Object.assign({}, prev, { [field]: value }); }); }
@@ -247,6 +287,46 @@ export default function AsignaturaDetailPage() {
   function loadGrupos() { gruposApi.getByAsignatura(Number(id)).then(function (r) { setGrupos(r.data); }); }
   function loadCarpetas() { carpetasApi.getByAsignatura(Number(id)).then(function (r) { setCarpetas(r.data); }); }
   function loadClases() { clasesApi.getAll().then(function (r) { setClases(r.data.filter(function (c) { return c.asignaturaId === Number(id); })); }); }
+  function loadAsistencia() { asistenciaApi.getByAsignatura(Number(id)).then(function (r) { setAsistenciaList(r.data); }).catch(function () {}); }
+  function loadRubricas(asigId: number) {
+    tareasApi.getByAsignatura(asigId).then(function (res) {
+      var allRubricas: Rubrica[] = [];
+      var promises = res.data.map(function (t) {
+        return rubricasApi.getByTarea(t.id).then(function (rr) {
+          if (rr.data) allRubricas.push(rr.data);
+        }).catch(function () {});
+      });
+      Promise.all(promises).then(function () { setRubricasList(allRubricas); });
+    }).catch(function () {});
+  }
+
+  function handleRegistrarAsistencia(estudianteId: number, estado: string) {
+    asistenciaApi.registrar({ estudianteId: estudianteId, asignaturaId: Number(id), fecha: asistenciaFecha, estado: estado, observacion: '' })
+      .then(function () { loadAsistencia(); })
+      .catch(function () {});
+  }
+
+  function handleCreateRubrica(e: FormEvent) {
+    e.preventDefault();
+    rubricasApi.create(Object.assign({}, rubricaForm, { criterios: rubricaForm.criterios.map(function (c, i) { return Object.assign({}, c, { orden: i + 1 }); }) }))
+      .then(function () { setShowRubricaForm(false); setRubricaForm({ nombre: '', descripcion: '', tareaId: 0, criterios: [] }); loadRubricas(Number(id)); });
+  }
+
+  function addCriterio() {
+    setRubricaForm(Object.assign({}, rubricaForm, { criterios: rubricaForm.criterios.concat([{ nombre: '', descripcion: '', puntuacionMaxima: 10, nivelExcelente: '', nivelBueno: '', nivelSuficiente: '', nivelInsuficiente: '' }]) }));
+  }
+
+  function updateCriterio(index: number, field: string, value: any) {
+    var newCriterios = rubricaForm.criterios.map(function (c, i) {
+      if (i === index) return Object.assign({}, c, { [field]: value });
+      return c;
+    });
+    setRubricaForm(Object.assign({}, rubricaForm, { criterios: newCriterios }));
+  }
+
+  function removeCriterio(index: number) {
+    setRubricaForm(Object.assign({}, rubricaForm, { criterios: rubricaForm.criterios.filter(function (_, i) { return i !== index; }) }));
+  }
 
   function handleCreateAnuncio(e: FormEvent) {
     e.preventDefault();
@@ -1189,6 +1269,271 @@ export default function AsignaturaDetailPage() {
                       </div>
                     )}
                     <p className="text-xs text-gray-400 italic border-t border-gray-100 pt-2">Valoracion anonima</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== ASISTENCIA TAB ===== */}
+      {tab === 'asistencia' && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Control de asistencia</h3>
+            {canManageContent && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={asistenciaFecha} onChange={function (e) { setAsistenciaFecha(e.target.value); }} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
+            )}
+          </div>
+
+          {canManageContent && asignatura && asignatura.estudianteIds && asignatura.estudianteIds.length > 0 ? (
+            <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Estudiante</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {asignatura.estudianteIds.map(function (estId) {
+                    var registro = asistenciaList.find(function (a) { return a.estudianteId === estId && a.fecha === asistenciaFecha; });
+                    var estadoActual = registro ? registro.estado : '';
+                    return (
+                      <tr key={estId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{registro ? registro.estudianteNombre : 'Estudiante #' + estId}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center gap-1">
+                            {['PRESENTE', 'AUSENTE', 'TARDANZA', 'JUSTIFICADO'].map(function (est) {
+                              var colors: Record<string, string> = { PRESENTE: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', AUSENTE: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300', TARDANZA: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300', JUSTIFICADO: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' };
+                              var labels: Record<string, string> = { PRESENTE: 'P', AUSENTE: 'A', TARDANZA: 'T', JUSTIFICADO: 'J' };
+                              return (
+                                <button key={est} onClick={function () { handleRegistrarAsistencia(estId, est); }} className={'rounded-md px-2 py-1 text-xs font-medium transition ' + (estadoActual === est ? colors[est] + ' ring-2 ring-indigo-500' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-400')} title={est}>{labels[est]}</button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : isEstudiante ? (
+            <div>
+              <div className="grid grid-cols-4 gap-3 mb-6">
+                {(function () {
+                  var miAsistencia = asistenciaList.filter(function (a) { return a.estudianteId === meId; });
+                  var total = miAsistencia.length;
+                  var presentes = miAsistencia.filter(function (a) { return a.estado === 'PRESENTE'; }).length;
+                  var ausentes = miAsistencia.filter(function (a) { return a.estado === 'AUSENTE'; }).length;
+                  var tardanzas = miAsistencia.filter(function (a) { return a.estado === 'TARDANZA'; }).length;
+                  return [
+                    { label: 'Total clases', value: total, color: 'bg-indigo-100 text-indigo-700' },
+                    { label: 'Presente', value: presentes, color: 'bg-green-100 text-green-700' },
+                    { label: 'Ausente', value: ausentes, color: 'bg-red-100 text-red-700' },
+                    { label: 'Tardanza', value: tardanzas, color: 'bg-yellow-100 text-yellow-700' },
+                  ].map(function (s) {
+                    return (
+                      <div key={s.label} className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm text-center">
+                        <p className={'text-2xl font-bold ' + s.color}>{s.value}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{s.label}</p>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              {asistenciaList.filter(function (a) { return a.estudianteId === meId; }).length === 0 ? (
+                <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 shadow-sm">No hay registros de asistencia</p>
+              ) : (
+                <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Fecha</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Estado</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Observacion</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {asistenciaList.filter(function (a) { return a.estudianteId === meId; }).map(function (a) {
+                        var estadoColors: Record<string, string> = { PRESENTE: 'bg-green-100 text-green-700', AUSENTE: 'bg-red-100 text-red-700', TARDANZA: 'bg-yellow-100 text-yellow-700', JUSTIFICADO: 'bg-blue-100 text-blue-700' };
+                        return (
+                          <tr key={a.id}>
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{a.fecha}</td>
+                            <td className="px-4 py-3"><span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + (estadoColors[a.estado] || '')}>{a.estado}</span></td>
+                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{a.observacion || '-'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 shadow-sm">No hay datos de asistencia</p>
+          )}
+        </div>
+      )}
+
+      {/* ===== PROGRESO TAB ===== */}
+      {tab === 'progreso' && (
+        <div>
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Seguimiento de progreso</h3>
+          {progreso ? (
+            <div className="space-y-6">
+              {/* Overall progress bar */}
+              <div className="rounded-xl bg-white dark:bg-gray-800 p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progreso general</span>
+                  <span className="text-sm font-bold text-indigo-600">{progreso.porcentajeProgreso.toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
+                  <div className="bg-indigo-600 h-4 rounded-full transition-all" style={{ width: progreso.porcentajeProgreso + '%' }}></div>
+                </div>
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Tareas totales', value: progreso.totalTareas, icon: '📝' },
+                  { label: 'Entregadas', value: progreso.tareasEntregadas, icon: '✅' },
+                  { label: 'Calificadas', value: progreso.tareasCalificadas, icon: '📊' },
+                  { label: 'Promedio', value: progreso.promedioCalificaciones.toFixed(1), icon: '⭐' },
+                ].map(function (s) {
+                  return (
+                    <div key={s.label} className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm text-center">
+                      <p className="text-2xl mb-1">{s.icon}</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{s.value}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{s.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Attendance stats */}
+              <div className="rounded-xl bg-white dark:bg-gray-800 p-6 shadow-sm">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Asistencia</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{progreso.clasesAsistidas} de {progreso.totalClases} clases</span>
+                  <span className="text-sm font-bold text-green-600">{progreso.porcentajeAsistencia.toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                  <div className={'h-3 rounded-full transition-all ' + (progreso.porcentajeAsistencia >= 80 ? 'bg-green-500' : progreso.porcentajeAsistencia >= 60 ? 'bg-yellow-500' : 'bg-red-500')} style={{ width: progreso.porcentajeAsistencia + '%' }}></div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 shadow-sm">Cargando datos de progreso...</p>
+          )}
+        </div>
+      )}
+
+      {/* ===== RUBRICAS TAB ===== */}
+      {tab === 'rubricas' && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Rubricas de evaluacion</h3>
+            {canManageContent && <button onClick={function () { setShowRubricaForm(!showRubricaForm); }} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">{showRubricaForm ? 'Cancelar' : '+ Nueva rubrica'}</button>}
+          </div>
+
+          {showRubricaForm && canManageContent && (
+            <form onSubmit={handleCreateRubrica} className="mb-6 space-y-4 rounded-xl bg-white dark:bg-gray-800 p-6 shadow-sm">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
+                <input type="text" value={rubricaForm.nombre} onChange={function (e) { setRubricaForm(Object.assign({}, rubricaForm, { nombre: e.target.value })); }} required className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Descripcion</label>
+                <textarea value={rubricaForm.descripcion} onChange={function (e) { setRubricaForm(Object.assign({}, rubricaForm, { descripcion: e.target.value })); }} rows={2} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tarea asociada</label>
+                <select value={rubricaForm.tareaId} onChange={function (e) { setRubricaForm(Object.assign({}, rubricaForm, { tareaId: Number(e.target.value) })); }} required className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none">
+                  <option value={0} disabled>Seleccionar tarea...</option>
+                  {tareas.map(function (t) { return <option key={t.id} value={t.id}>{t.titulo}</option>; })}
+                </select>
+              </div>
+
+              {/* Criterios */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Criterios</label>
+                  <button type="button" onClick={addCriterio} className="rounded-lg bg-teal-600 px-2 py-1 text-xs font-medium text-white hover:bg-teal-700 transition">+ Criterio</button>
+                </div>
+                {rubricaForm.criterios.map(function (c, idx) {
+                  return (
+                    <div key={idx} className="mb-4 rounded-lg border border-gray-200 dark:border-gray-600 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Criterio {idx + 1}</span>
+                        <button type="button" onClick={function () { removeCriterio(idx); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
+                      </div>
+                      <input type="text" value={c.nombre} onChange={function (e) { updateCriterio(idx, 'nombre', e.target.value); }} placeholder="Nombre del criterio" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm dark:bg-gray-700 dark:text-white" />
+                      <input type="number" value={c.puntuacionMaxima} onChange={function (e) { updateCriterio(idx, 'puntuacionMaxima', Number(e.target.value)); }} placeholder="Puntuacion maxima" className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm dark:bg-gray-700 dark:text-white" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" value={c.nivelExcelente} onChange={function (e) { updateCriterio(idx, 'nivelExcelente', e.target.value); }} placeholder="Nivel excelente" className="rounded-lg border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs dark:bg-gray-700 dark:text-white" />
+                        <input type="text" value={c.nivelBueno} onChange={function (e) { updateCriterio(idx, 'nivelBueno', e.target.value); }} placeholder="Nivel bueno" className="rounded-lg border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs dark:bg-gray-700 dark:text-white" />
+                        <input type="text" value={c.nivelSuficiente} onChange={function (e) { updateCriterio(idx, 'nivelSuficiente', e.target.value); }} placeholder="Nivel suficiente" className="rounded-lg border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs dark:bg-gray-700 dark:text-white" />
+                        <input type="text" value={c.nivelInsuficiente} onChange={function (e) { updateCriterio(idx, 'nivelInsuficiente', e.target.value); }} placeholder="Nivel insuficiente" className="rounded-lg border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs dark:bg-gray-700 dark:text-white" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">Crear rubrica</button>
+            </form>
+          )}
+
+          {rubricasList.length === 0 ? (
+            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 shadow-sm">No hay rubricas definidas</p>
+          ) : (
+            <div className="space-y-4">
+              {rubricasList.map(function (r) {
+                return (
+                  <div key={r.id} className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{r.nombre}</h4>
+                        {r.tareaTitulo && <p className="text-xs text-indigo-500 mt-0.5">Tarea: {r.tareaTitulo}</p>}
+                        {r.descripcion && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{r.descripcion}</p>}
+                      </div>
+                      {canManageContent && <button onClick={function () { rubricasApi.delete(r.id).then(function () { loadRubricas(Number(id)); }); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
+                    </div>
+                    {r.criterios && r.criterios.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                              <th className="py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Criterio</th>
+                              <th className="py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Max</th>
+                              <th className="py-2 text-center text-xs font-medium text-green-600">Excelente</th>
+                              <th className="py-2 text-center text-xs font-medium text-blue-600">Bueno</th>
+                              <th className="py-2 text-center text-xs font-medium text-yellow-600">Suficiente</th>
+                              <th className="py-2 text-center text-xs font-medium text-red-600">Insuficiente</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {r.criterios.map(function (c) {
+                              return (
+                                <tr key={c.id}>
+                                  <td className="py-2 font-medium text-gray-900 dark:text-white">{c.nombre}</td>
+                                  <td className="py-2 text-center text-gray-600 dark:text-gray-400">{c.puntuacionMaxima}</td>
+                                  <td className="py-2 text-center text-xs text-green-700 dark:text-green-400">{c.nivelExcelente || '-'}</td>
+                                  <td className="py-2 text-center text-xs text-blue-700 dark:text-blue-400">{c.nivelBueno || '-'}</td>
+                                  <td className="py-2 text-center text-xs text-yellow-700 dark:text-yellow-400">{c.nivelSuficiente || '-'}</td>
+                                  <td className="py-2 text-center text-xs text-red-700 dark:text-red-400">{c.nivelInsuficiente || '-'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 );
               })}

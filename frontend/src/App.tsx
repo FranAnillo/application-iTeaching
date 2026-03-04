@@ -13,6 +13,11 @@ import UsuariosPage from './pages/UsuariosPage';
 import ClasesPage from './pages/ClasesPage';
 import ValoracionesPage from './pages/ValoracionesPage';
 import MaterialesPage from './pages/MaterialesPage';
+import CalendarioPage from './pages/CalendarioPage';
+import MensajesPage from './pages/MensajesPage';
+import CalificacionesGlobalPage from './pages/CalificacionesGlobalPage';
+import LogrosPage from './pages/LogrosPage';
+import ChatPage from './pages/ChatPage';
 
 export default function App() {
   return (
@@ -35,6 +40,11 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="asignaturas" element={<AsignaturasPage />} />
             <Route path="asignaturas/:id" element={<AsignaturaDetailPage />} />
+            <Route path="calendario" element={<CalendarioPage />} />
+            <Route path="mensajes" element={<MensajesPage />} />
+            <Route path="chat" element={<ChatPage />} />
+            <Route path="calificaciones" element={<CalificacionesGlobalPage />} />
+            <Route path="logros" element={<LogrosPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="clases" element={<ClasesPage />} />
             <Route path="valoraciones" element={<ValoracionesPage />} />

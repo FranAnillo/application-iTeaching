@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface TareaRepository extends JpaRepository<Tarea, Long> {
     List<Tarea> findByAsignaturaIdOrderByFechaEntregaAsc(Long asignaturaId);
+    List<Tarea> findByAsignaturaId(Long asignaturaId);
 }

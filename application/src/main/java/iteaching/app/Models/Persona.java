@@ -3,6 +3,8 @@ package iteaching.app.Models;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
@@ -78,6 +80,16 @@ public class Persona extends Usuarios {
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "alumno")
     private Set<Valoracion> valoracionesEscritas = new HashSet<>();
+
+    /** Logros obtenidos */
+    @JsonIgnore
+    @ManyToMany
+    @JoinTable(
+        name = "persona_logro",
+        joinColumns = @JoinColumn(name = "persona_id"),
+        inverseJoinColumns = @JoinColumn(name = "logro_id")
+    )
+    private Set<Logro> logros = new HashSet<>();
 
     @Transient
     public String getNombreCompleto() {

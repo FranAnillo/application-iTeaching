@@ -16,6 +16,12 @@ import type {
   ForoRespuesta,
   Grupo,
   Carpeta,
+  Mensaje,
+  Notificacion,
+  AsistenciaRecord,
+  Progreso,
+  Rubrica,
+  Logro,
 } from '../types';
 
 // ===== Auth =====
@@ -176,4 +182,53 @@ export const carpetasApi = {
   create: (data: Partial<Carpeta>) => api.post<Carpeta>('/carpetas', data),
   update: (id: number, data: Partial<Carpeta>) => api.put<Carpeta>(`/carpetas/${id}`, data),
   delete: (id: number) => api.delete(`/carpetas/${id}`),
+};
+
+// ===== Mensajes =====
+export var mensajesApi = {
+  getAll: function () { return api.get<Mensaje[]>('/mensajes'); },
+  getConversacion: function (userId: number) { return api.get<Mensaje[]>('/mensajes/conversacion/' + userId); },
+  countNoLeidos: function () { return api.get<{ count: number }>('/mensajes/no-leidos/count'); },
+  enviar: function (data: Partial<Mensaje>) { return api.post<Mensaje>('/mensajes', data); },
+  marcarLeidos: function (userId: number) { return api.patch('/mensajes/conversacion/' + userId + '/leer'); },
+  getOnlineUsers: function () { return api.get<number[]>('/mensajes/online'); },
+};
+
+// ===== Notificaciones =====
+export var notificacionesApi = {
+  getAll: function () { return api.get<Notificacion[]>('/notificaciones'); },
+  getNoLeidas: function () { return api.get<Notificacion[]>('/notificaciones/no-leidas'); },
+  countNoLeidas: function () { return api.get<{ count: number }>('/notificaciones/no-leidas/count'); },
+  marcarLeida: function (id: number) { return api.patch('/notificaciones/' + id + '/leer'); },
+  marcarTodasLeidas: function () { return api.patch('/notificaciones/leer-todas'); },
+};
+
+// ===== Asistencia =====
+export var asistenciaApi = {
+  getByAsignatura: function (asignaturaId: number) { return api.get<AsistenciaRecord[]>('/asistencia/asignatura/' + asignaturaId); },
+  getByFecha: function (asignaturaId: number, fecha: string) { return api.get<AsistenciaRecord[]>('/asistencia/asignatura/' + asignaturaId + '/fecha/' + fecha); },
+  getByEstudiante: function (estudianteId: number, asignaturaId: number) { return api.get<AsistenciaRecord[]>('/asistencia/estudiante/' + estudianteId + '/asignatura/' + asignaturaId); },
+  registrar: function (data: Partial<AsistenciaRecord>) { return api.post<AsistenciaRecord>('/asistencia', data); },
+  registrarLote: function (data: Partial<AsistenciaRecord>[]) { return api.post('/asistencia/lote', data); },
+};
+
+// ===== Progreso =====
+export var progresoApi = {
+  getByAsignatura: function (asignaturaId: number) { return api.get<Progreso>('/progreso/asignatura/' + asignaturaId); },
+  getGlobal: function () { return api.get<Progreso[]>('/progreso/global'); },
+};
+
+// ===== Rubricas =====
+export var rubricasApi = {
+  getByTarea: function (tareaId: number) { return api.get<Rubrica>('/rubricas/tarea/' + tareaId); },
+  getById: function (id: number) { return api.get<Rubrica>('/rubricas/' + id); },
+  crear: function (data: Partial<Rubrica>) { return api.post<Rubrica>('/rubricas', data); },
+  eliminar: function (id: number) { return api.delete('/rubricas/' + id); },
+};
+
+// ===== Logros =====
+export var logrosApi = {
+  getAll: function () { return api.get<Logro[]>('/logros'); },
+  getMisLogros: function () { return api.get<Logro[]>('/logros/mis-logros'); },
+  crear: function (data: Partial<Logro>) { return api.post<Logro>('/logros', data); },
 };
