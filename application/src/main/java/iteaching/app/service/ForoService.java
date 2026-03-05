@@ -10,6 +10,7 @@ import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.ForoRespuestaRepository;
 import iteaching.app.repository.ForoTemaRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +56,8 @@ public class ForoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         ForoTema t = new ForoTema();
-        t.setTitulo(dto.getTitulo());
-        t.setContenido(dto.getContenido());
+        t.setTitulo(InputSanitizer.sanitize(dto.getTitulo()));
+        t.setContenido(InputSanitizer.sanitize(dto.getContenido()));
         t.setFijado(dto.getFijado() != null ? dto.getFijado() : false);
         t.setFechaCreacion(LocalDateTime.now());
         t.setAsignatura(asignatura);
@@ -73,7 +74,7 @@ public class ForoService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         ForoRespuesta r = new ForoRespuesta();
-        r.setContenido(dto.getContenido());
+        r.setContenido(InputSanitizer.sanitize(dto.getContenido()));
         r.setFechaCreacion(LocalDateTime.now());
         r.setTema(tema);
         r.setAutor(autor);

@@ -8,6 +8,7 @@ import iteaching.app.dto.ValoracionDTO;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.ValoracionRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,8 +123,8 @@ public class ValoracionService {
         // 9. Crear la valoración
         Valoracion v = new Valoracion();
         v.setPuntuacion(dto.getPuntuacion());
-        v.setComentario(dto.getComentario());
-        v.setPuntosMejora(dto.getPuntosMejora());
+        v.setComentario(InputSanitizer.sanitize(dto.getComentario()));
+        v.setPuntosMejora(InputSanitizer.sanitize(dto.getPuntosMejora()));
         v.setFechaCreacion(LocalDateTime.now());
         v.setProfesor(profesor);
         v.setAlumno(alumno); // se guarda internamente pero NO se expone en el DTO

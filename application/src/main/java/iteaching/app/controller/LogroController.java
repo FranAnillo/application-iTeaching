@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -38,7 +39,7 @@ public class LogroController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<LogroDTO> crear(@RequestBody LogroDTO dto) {
+    public ResponseEntity<LogroDTO> crear(@Valid @RequestBody LogroDTO dto) {
         return ResponseEntity.ok(logroService.crearLogro(dto));
     }
 }

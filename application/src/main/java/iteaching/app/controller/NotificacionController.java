@@ -44,8 +44,10 @@ public class NotificacionController {
     }
 
     @PatchMapping("/{id}/leer")
-    public ResponseEntity<Void> marcarLeida(@PathVariable Long id) {
-        notificacionService.marcarLeida(id);
+    public ResponseEntity<Void> marcarLeida(@PathVariable Long id, Authentication auth) {
+        var persona = personaRepository.findByUsername(auth.getName())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        notificacionService.marcarLeida(id, persona.getId());
         return ResponseEntity.ok().build();
     }
 

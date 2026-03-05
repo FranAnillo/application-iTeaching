@@ -6,6 +6,7 @@ import iteaching.app.dto.MensajeDTO;
 import iteaching.app.repository.MensajeRepository;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.AsignaturaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -53,7 +54,7 @@ public class MensajeService {
             .orElseThrow(() -> new RuntimeException("Destinatario no encontrado"));
 
         Mensaje mensaje = new Mensaje();
-        mensaje.setContenido(dto.getContenido());
+        mensaje.setContenido(InputSanitizer.sanitize(dto.getContenido()));
         mensaje.setFechaEnvio(LocalDateTime.now());
         mensaje.setLeido(false);
         mensaje.setRemitente(remitente);

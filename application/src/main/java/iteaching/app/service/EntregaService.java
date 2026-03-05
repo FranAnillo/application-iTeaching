@@ -7,6 +7,7 @@ import iteaching.app.dto.EntregaDTO;
 import iteaching.app.repository.EntregaRepository;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.TareaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,8 +52,8 @@ public class EntregaService {
                 .ifPresent(e -> { throw new RuntimeException("Ya has enviado una entrega para esta tarea"); });
 
         Entrega e = new Entrega();
-        e.setContenido(dto.getContenido());
-        e.setUrlAdjunto(dto.getUrlAdjunto());
+        e.setContenido(InputSanitizer.sanitize(dto.getContenido()));
+        e.setUrlAdjunto(InputSanitizer.sanitizeUrl(dto.getUrlAdjunto()));
         e.setFechaEntrega(LocalDateTime.now());
         e.setTarea(tarea);
         e.setEstudiante(estudiante);
@@ -66,7 +67,7 @@ public class EntregaService {
         Entrega e = entregaRepository.findById(entregaId)
                 .orElseThrow(() -> new RuntimeException("Entrega no encontrada"));
         e.setCalificacion(calificacion);
-        e.setComentarioProfesor(comentario);
+        e.setComentarioProfesor(InputSanitizer.sanitize(comentario));
         return toDTO(entregaRepository.save(e));
     }
 

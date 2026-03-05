@@ -7,6 +7,7 @@ import iteaching.app.dto.AnuncioDTO;
 import iteaching.app.repository.AnuncioRepository;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +48,8 @@ public class AnuncioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Anuncio a = new Anuncio();
-        a.setTitulo(dto.getTitulo());
-        a.setContenido(dto.getContenido());
+        a.setTitulo(InputSanitizer.sanitize(dto.getTitulo()));
+        a.setContenido(InputSanitizer.sanitize(dto.getContenido()));
         a.setImportante(dto.getImportante() != null ? dto.getImportante() : false);
         a.setFechaCreacion(LocalDateTime.now());
         a.setAsignatura(asignatura);

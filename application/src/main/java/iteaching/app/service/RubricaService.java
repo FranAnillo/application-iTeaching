@@ -6,6 +6,7 @@ import iteaching.app.dto.CriterioRubricaDTO;
 import iteaching.app.dto.RubricaDTO;
 import iteaching.app.repository.RubricaRepository;
 import iteaching.app.repository.TareaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +40,8 @@ public class RubricaService {
     @Transactional
     public RubricaDTO crear(RubricaDTO dto) {
         Rubrica rubrica = new Rubrica();
-        rubrica.setNombre(dto.getNombre());
-        rubrica.setDescripcion(dto.getDescripcion());
+        rubrica.setNombre(InputSanitizer.sanitize(dto.getNombre()));
+        rubrica.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
 
         if (dto.getTareaId() != null) {
             rubrica.setTarea(tareaRepository.findById(dto.getTareaId())
@@ -51,14 +52,14 @@ public class RubricaService {
         if (dto.getCriterios() != null) {
             for (CriterioRubricaDTO cDto : dto.getCriterios()) {
                 CriterioRubrica criterio = new CriterioRubrica();
-                criterio.setNombre(cDto.getNombre());
-                criterio.setDescripcion(cDto.getDescripcion());
+                criterio.setNombre(InputSanitizer.sanitize(cDto.getNombre()));
+                criterio.setDescripcion(InputSanitizer.sanitize(cDto.getDescripcion()));
                 criterio.setPuntuacionMaxima(cDto.getPuntuacionMaxima());
                 criterio.setOrden(cDto.getOrden());
-                criterio.setNivelExcelente(cDto.getNivelExcelente());
-                criterio.setNivelBueno(cDto.getNivelBueno());
-                criterio.setNivelSuficiente(cDto.getNivelSuficiente());
-                criterio.setNivelInsuficiente(cDto.getNivelInsuficiente());
+                criterio.setNivelExcelente(InputSanitizer.sanitize(cDto.getNivelExcelente()));
+                criterio.setNivelBueno(InputSanitizer.sanitize(cDto.getNivelBueno()));
+                criterio.setNivelSuficiente(InputSanitizer.sanitize(cDto.getNivelSuficiente()));
+                criterio.setNivelInsuficiente(InputSanitizer.sanitize(cDto.getNivelInsuficiente()));
                 criterio.setRubrica(rubrica);
                 rubrica.getCriterios().add(criterio);
             }

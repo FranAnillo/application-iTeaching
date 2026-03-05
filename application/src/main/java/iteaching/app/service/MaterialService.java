@@ -9,6 +9,7 @@ import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.CarpetaRepository;
 import iteaching.app.repository.MaterialRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,9 +67,9 @@ public class MaterialService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
 
         Material material = new Material();
-        material.setTitulo(dto.getTitulo());
-        material.setDescripcion(dto.getDescripcion());
-        material.setUrlRecurso(dto.getUrlRecurso());
+        material.setTitulo(InputSanitizer.sanitize(dto.getTitulo()));
+        material.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        material.setUrlRecurso(InputSanitizer.sanitizeUrl(dto.getUrlRecurso()));
         material.setTipo(dto.getTipo() != null
                 ? Material.TipoMaterial.valueOf(dto.getTipo())
                 : Material.TipoMaterial.DOCUMENTO);
@@ -95,9 +96,9 @@ public class MaterialService {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado con id: " + id));
 
-        material.setTitulo(dto.getTitulo());
-        material.setDescripcion(dto.getDescripcion());
-        material.setUrlRecurso(dto.getUrlRecurso());
+        material.setTitulo(InputSanitizer.sanitize(dto.getTitulo()));
+        material.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        material.setUrlRecurso(InputSanitizer.sanitizeUrl(dto.getUrlRecurso()));
         if (dto.getTipo() != null) {
             material.setTipo(Material.TipoMaterial.valueOf(dto.getTipo()));
         }

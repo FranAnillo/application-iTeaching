@@ -7,6 +7,7 @@ import iteaching.app.dto.LoginRequest;
 import iteaching.app.dto.RegisterRequest;
 import iteaching.app.repository.UsuarioRepository;
 import iteaching.app.security.JwtUtil;
+import iteaching.app.security.InputSanitizer;
 import iteaching.app.security.PasswordPolicyValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,10 +63,10 @@ public class AuthService {
         Persona persona = new Persona();
         persona.setUsername(request.getUsername());
         persona.setPassword(passwordEncoder.encode(request.getPassword()));
-        persona.setNombre(request.getNombre());
-        persona.setApellido(request.getApellido());
+        persona.setNombre(InputSanitizer.sanitize(request.getNombre()));
+        persona.setApellido(InputSanitizer.sanitize(request.getApellido()));
         persona.setEmail(request.getEmail());
-        persona.setTelefono(request.getTelefono());
+        persona.setTelefono(InputSanitizer.sanitize(request.getTelefono()));
         persona.setEnabled(true);
         persona.setRole(Usuarios.Role.ROLE_ESTUDIANTE);
 

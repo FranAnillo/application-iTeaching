@@ -3,6 +3,7 @@ package iteaching.app.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,9 +18,11 @@ public class ValoracionDTO {
     @Min(1) @Max(5)
     private Double puntuacion;
 
+    @Size(max = 5000)
     private String comentario;
 
     /** Puntos de mejora sugeridos */
+    @Size(max = 5000)
     private String puntosMejora;
 
     private String fechaCreacion;

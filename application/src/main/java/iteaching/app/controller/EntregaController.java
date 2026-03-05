@@ -2,7 +2,11 @@ package iteaching.app.controller;
 
 import iteaching.app.dto.EntregaDTO;
 import iteaching.app.service.EntregaService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +23,7 @@ public class EntregaController {
     }
 
     @GetMapping("/tarea/{tareaId}")
+    @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
     public ResponseEntity<List<EntregaDTO>> findByTarea(@PathVariable Long tareaId) {
         return ResponseEntity.ok(entregaService.findByTarea(tareaId));
     }
@@ -29,15 +34,17 @@ public class EntregaController {
     }
 
     @PostMapping
-    public ResponseEntity<EntregaDTO> submit(@RequestBody EntregaDTO dto, Authentication auth) {
+    @PreAuthorize("hasRole('ESTUDIANTE')")
+    public ResponseEntity<EntregaDTO> submit(@Valid @RequestBody EntregaDTO dto, Authentication auth) {
         return ResponseEntity.ok(entregaService.submit(dto, auth.getName()));
     }
 
     /** Instructor grades a submission */
     @PatchMapping("/{id}/calificar")
+    @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
     public ResponseEntity<EntregaDTO> calificar(
             @PathVariable Long id,
-            @RequestParam Double calificacion,
+            @RequestParam @DecimalMin("0.0") @DecimalMax("100.0") Double calificacion,
             @RequestParam(required = false) String comentario) {
         return ResponseEntity.ok(entregaService.calificar(id, calificacion, comentario));
     }

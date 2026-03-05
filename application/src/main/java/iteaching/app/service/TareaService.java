@@ -7,6 +7,7 @@ import iteaching.app.dto.TareaDTO;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.TareaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +48,8 @@ public class TareaService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Tarea t = new Tarea();
-        t.setTitulo(dto.getTitulo());
-        t.setDescripcion(dto.getDescripcion());
+        t.setTitulo(InputSanitizer.sanitize(dto.getTitulo()));
+        t.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
         t.setFechaCreacion(LocalDateTime.now());
         t.setFechaEntrega(LocalDateTime.parse(dto.getFechaEntrega()));
         t.setPuntuacionMaxima(dto.getPuntuacionMaxima() != null ? dto.getPuntuacionMaxima() : 10.0);

@@ -6,6 +6,7 @@ import iteaching.app.dto.AsistenciaDTO;
 import iteaching.app.repository.AsistenciaRepository;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -66,7 +67,7 @@ public class AsistenciaService {
         }
 
         asistencia.setEstado(Asistencia.EstadoAsistencia.valueOf(dto.getEstado()));
-        asistencia.setObservacion(dto.getObservacion());
+        asistencia.setObservacion(InputSanitizer.sanitize(dto.getObservacion()));
         asistencia.setRegistradoPor(registradoPor);
 
         return toDTO(asistenciaRepository.save(asistencia));

@@ -7,6 +7,7 @@ import iteaching.app.dto.GrupoDTO;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.GrupoRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,7 @@ public class GrupoService {
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
 
         Grupo g = new Grupo();
-        g.setNombre(dto.getNombre());
+        g.setNombre(InputSanitizer.sanitize(dto.getNombre()));
         g.setTipo(dto.getTipo() != null
                 ? Grupo.TipoGrupo.valueOf(dto.getTipo())
                 : Grupo.TipoGrupo.TEORIA);
@@ -60,7 +61,7 @@ public class GrupoService {
     public GrupoDTO update(Long id, GrupoDTO dto) {
         Grupo g = grupoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
-        g.setNombre(dto.getNombre());
+        g.setNombre(InputSanitizer.sanitize(dto.getNombre()));
         if (dto.getTipo() != null) {
             g.setTipo(Grupo.TipoGrupo.valueOf(dto.getTipo()));
         }

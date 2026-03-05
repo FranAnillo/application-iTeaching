@@ -35,9 +35,12 @@ public class NotificacionService {
         return notificacionRepository.countByUsuarioIdAndLeidaFalse(userId);
     }
 
-    public void marcarLeida(Long notificacionId) {
+    public void marcarLeida(Long notificacionId, Long userId) {
         Notificacion n = notificacionRepository.findById(notificacionId)
             .orElseThrow(() -> new RuntimeException("Notificación no encontrada"));
+        if (!n.getUsuario().getId().equals(userId)) {
+            throw new RuntimeException("Acceso denegado: la notificación no pertenece al usuario");
+        }
         n.setLeida(true);
         notificacionRepository.save(n);
     }

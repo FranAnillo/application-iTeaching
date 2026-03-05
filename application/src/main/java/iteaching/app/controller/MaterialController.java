@@ -2,6 +2,7 @@ package iteaching.app.controller;
 
 import iteaching.app.dto.MaterialDTO;
 import iteaching.app.service.MaterialService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -51,13 +52,13 @@ public class MaterialController {
 
     @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
     @PostMapping
-    public ResponseEntity<MaterialDTO> create(@RequestBody MaterialDTO dto, Authentication authentication) {
+    public ResponseEntity<MaterialDTO> create(@Valid @RequestBody MaterialDTO dto, Authentication authentication) {
         return ResponseEntity.ok(materialService.create(dto, authentication.getName()));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
     @PutMapping("/{id}")
-    public ResponseEntity<MaterialDTO> update(@PathVariable Long id, @RequestBody MaterialDTO dto) {
+    public ResponseEntity<MaterialDTO> update(@PathVariable Long id, @Valid @RequestBody MaterialDTO dto) {
         return ResponseEntity.ok(materialService.update(id, dto));
     }
 

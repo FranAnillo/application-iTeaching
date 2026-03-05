@@ -50,8 +50,10 @@ public class PersonaController {
         try {
             CsvImportResult result = personaService.importFromCsv(file.getInputStream());
             return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al importar CSV: " + e.getMessage());
+            throw new RuntimeException("Error al importar CSV");
         }
     }
 }

@@ -12,6 +12,12 @@ export default function AsignaturasPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // CSV import state
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: Asignatura[]; error: string | null } | null>(null);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -42,16 +48,45 @@ export default function AsignaturasPage() {
     }
   };
 
+  const handleImportCsv = () => {
+    if (!csvFile) return;
+    setImporting(true);
+    setImportResult(null);
+    asignaturasApi.importCsv(csvFile)
+      .then((res) => {
+        setImportResult({ imported: res.data, error: null });
+        load();
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.message || err.message || 'Error al importar';
+        setImportResult({ imported: [], error: msg });
+      })
+      .finally(() => {
+        setImporting(false);
+      });
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Asignaturas</h2>
-        {isAdmin && <Link
-          to="/asignaturas/new"
-          className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
-        >
-          + Nueva asignatura
-        </Link>}
+        {isAdmin && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowCsvModal(true); setImportResult(null); setCsvFile(null); }}
+              className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Importar CSV
+            </button>
+            <Link
+              to="/asignaturas/new"
+              className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+            >
+              + Nueva asignatura
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Search bar */}
@@ -105,6 +140,85 @@ export default function AsignaturasPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ===== CSV IMPORT MODAL ===== */}
+      {showCsvModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => setShowCsvModal(false)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Importar asignaturas desde CSV</h3>
+              <button onClick={() => setShowCsvModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-800 dark:bg-green-900/30 dark:text-green-300">
+              <p className="mb-2 font-semibold">Formato del CSV (separado por ;)</p>
+              <code className="block rounded bg-white p-2 text-xs dark:bg-gray-900 dark:text-gray-300">
+                nombre;descripcion;url
+              </code>
+              <p className="mt-2 text-xs">
+                <strong>Campo obligatorio:</strong> nombre<br />
+                <strong>Campos opcionales:</strong> descripcion, url
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar archivo CSV</label>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  setCsvFile(files && files.length > 0 ? files[0] : null);
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-green-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-green-700 dark:text-gray-300"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleImportCsv}
+                disabled={!csvFile || importing}
+                className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {importing ? 'Importando...' : 'Importar'}
+              </button>
+              <button
+                onClick={() => setShowCsvModal(false)}
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            {importResult && (
+              <div className="mt-4 space-y-3">
+                {importResult.imported.length > 0 && (
+                  <div className="rounded-lg bg-green-50 p-3 dark:bg-green-900/30">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+                      ✅ {importResult.imported.length} asignatura(s) importada(s) correctamente
+                    </p>
+                    <ul className="mt-1 list-disc pl-5 text-xs text-green-700 dark:text-green-400">
+                      {importResult.imported.map((a) => (
+                        <li key={a.id}>{a.nombre}{a.descripcion ? ` - ${a.descripcion}` : ''}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {importResult.error && (
+                  <div className="rounded-lg bg-red-50 p-3 dark:bg-red-900/30">
+                    <p className="text-sm font-semibold text-red-800 dark:text-red-300">
+                      ❌ Error
+                    </p>
+                    <p className="mt-1 text-xs text-red-700 dark:text-red-400">{importResult.error}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

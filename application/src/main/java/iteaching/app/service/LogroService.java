@@ -6,6 +6,7 @@ import iteaching.app.dto.LogroDTO;
 import iteaching.app.repository.EntregaRepository;
 import iteaching.app.repository.LogroRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -105,10 +106,10 @@ public class LogroService {
 
     public LogroDTO crearLogro(LogroDTO dto) {
         Logro logro = new Logro();
-        logro.setCodigo(dto.getCodigo());
-        logro.setNombre(dto.getNombre());
-        logro.setDescripcion(dto.getDescripcion());
-        logro.setIcono(dto.getIcono());
+        logro.setCodigo(InputSanitizer.sanitize(dto.getCodigo()));
+        logro.setNombre(InputSanitizer.sanitize(dto.getNombre()));
+        logro.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        logro.setIcono(InputSanitizer.sanitize(dto.getIcono()));
         logro.setCategoria(Logro.CategoriaLogro.valueOf(dto.getCategoria()));
         logro.setValorObjetivo(dto.getValorObjetivo());
         return toDTO(logroRepository.save(logro));

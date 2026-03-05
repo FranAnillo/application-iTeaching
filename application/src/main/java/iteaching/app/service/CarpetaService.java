@@ -5,6 +5,7 @@ import iteaching.app.Models.Carpeta;
 import iteaching.app.dto.CarpetaDTO;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.CarpetaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,7 @@ public class CarpetaService {
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
 
         Carpeta c = new Carpeta();
-        c.setNombre(dto.getNombre());
+        c.setNombre(InputSanitizer.sanitize(dto.getNombre()));
         c.setAsignatura(asignatura);
 
         if (dto.getPadreId() != null) {
@@ -65,7 +66,7 @@ public class CarpetaService {
     public CarpetaDTO update(Long id, CarpetaDTO dto) {
         Carpeta c = carpetaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Carpeta no encontrada"));
-        c.setNombre(dto.getNombre());
+        c.setNombre(InputSanitizer.sanitize(dto.getNombre()));
         return toDTO(carpetaRepository.save(c));
     }
 

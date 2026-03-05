@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/asistencia")
 public class AsistenciaController {
@@ -39,13 +41,13 @@ public class AsistenciaController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<AsistenciaDTO> registrar(@RequestBody AsistenciaDTO dto, Authentication auth) {
+    public ResponseEntity<AsistenciaDTO> registrar(@Valid @RequestBody AsistenciaDTO dto, Authentication auth) {
         return ResponseEntity.ok(asistenciaService.registrar(dto, auth.getName()));
     }
 
     @PostMapping("/lote")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<Void> registrarLote(@RequestBody List<AsistenciaDTO> dtos, Authentication auth) {
+    public ResponseEntity<Void> registrarLote(@Valid @RequestBody List<AsistenciaDTO> dtos, Authentication auth) {
         asistenciaService.registrarLote(dtos, auth.getName());
         return ResponseEntity.ok().build();
     }

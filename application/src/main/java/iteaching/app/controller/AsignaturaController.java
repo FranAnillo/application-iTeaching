@@ -66,8 +66,10 @@ public class AsignaturaController {
         try {
             List<AsignaturaDTO> imported = asignaturaService.importFromCsv(file.getInputStream(), auth.getName());
             return ResponseEntity.ok(imported);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al importar CSV: " + e.getMessage());
+            throw new RuntimeException("Error al importar CSV");
         }
     }
 

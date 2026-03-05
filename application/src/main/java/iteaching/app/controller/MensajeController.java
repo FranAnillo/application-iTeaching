@@ -4,6 +4,7 @@ import iteaching.app.config.WebSocketEventListener;
 import iteaching.app.dto.MensajeDTO;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.service.MensajeService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +52,7 @@ public class MensajeController {
     }
 
     @PostMapping
-    public ResponseEntity<MensajeDTO> enviar(@RequestBody MensajeDTO dto, Authentication auth) {
+    public ResponseEntity<MensajeDTO> enviar(@Valid @RequestBody MensajeDTO dto, Authentication auth) {
         return ResponseEntity.ok(mensajeService.enviarMensaje(dto, auth.getName()));
     }
 

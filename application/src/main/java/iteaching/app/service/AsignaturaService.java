@@ -6,6 +6,7 @@ import iteaching.app.Models.Usuarios;
 import iteaching.app.dto.AsignaturaDTO;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,9 +51,9 @@ public class AsignaturaService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
 
         Asignatura a = new Asignatura();
-        a.setNombre(dto.getNombre());
-        a.setDescripcion(dto.getDescripcion());
-        a.setUrl(dto.getUrl());
+        a.setNombre(InputSanitizer.sanitize(dto.getNombre()));
+        a.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        a.setUrl(InputSanitizer.sanitizeUrl(dto.getUrl()));
         a.setCreador(creador);
         return toDTO(asignaturaRepository.save(a));
     }
@@ -61,9 +62,9 @@ public class AsignaturaService {
     public AsignaturaDTO update(Long id, AsignaturaDTO dto) {
         Asignatura a = asignaturaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada con id: " + id));
-        a.setNombre(dto.getNombre());
-        a.setDescripcion(dto.getDescripcion());
-        a.setUrl(dto.getUrl());
+        a.setNombre(InputSanitizer.sanitize(dto.getNombre()));
+        a.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        a.setUrl(InputSanitizer.sanitizeUrl(dto.getUrl()));
         return toDTO(asignaturaRepository.save(a));
     }
 
@@ -148,23 +149,31 @@ public class AsignaturaService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + adminUsername));
 
         List<AsignaturaDTO> imported = new ArrayList<>();
+        final int MAX_LINES = 500;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
             String line;
             boolean header = true;
+            int lineCount = 0;
             while ((line = reader.readLine()) != null) {
                 if (header) { header = false; continue; } // skip header
+                lineCount++;
+                if (lineCount > MAX_LINES) {
+                    throw new RuntimeException("El CSV excede el límite máximo de " + MAX_LINES + " líneas");
+                }
                 String[] parts = line.split(";", -1);
                 if (parts.length < 1 || parts[0].trim().isEmpty()) continue;
 
                 Asignatura a = new Asignatura();
-                a.setNombre(parts[0].trim());
-                a.setDescripcion(parts.length > 1 ? parts[1].trim() : "");
-                a.setUrl(parts.length > 2 ? parts[2].trim() : "");
+                a.setNombre(InputSanitizer.sanitize(parts[0].trim()));
+                a.setDescripcion(parts.length > 1 ? InputSanitizer.sanitize(parts[1].trim()) : "");
+                a.setUrl(parts.length > 2 ? InputSanitizer.sanitizeUrl(parts[2].trim()) : "");
                 a.setCreador(admin);
                 imported.add(toDTO(asignaturaRepository.save(a)));
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al procesar el CSV: " + e.getMessage());
+            throw new RuntimeException("Error al procesar el CSV");
         }
         return imported;
     }

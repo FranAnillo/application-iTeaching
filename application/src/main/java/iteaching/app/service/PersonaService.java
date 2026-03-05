@@ -6,6 +6,7 @@ import iteaching.app.dto.CsvImportResult;
 import iteaching.app.dto.UsuarioDTO;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.UsuarioRepository;
+import iteaching.app.security.InputSanitizer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +71,7 @@ public class PersonaService {
         List<UsuarioDTO> imported = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         int lineNum = 0;
+        final int MAX_LINES = 500;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
             String line;
@@ -78,6 +80,10 @@ public class PersonaService {
                 lineNum++;
                 if (header) { header = false; continue; }
                 if (line.trim().isEmpty()) continue;
+                if (lineNum > MAX_LINES) {
+                    errors.add("Se alcanzó el límite máximo de " + MAX_LINES + " líneas. Se ignoraron las restantes.");
+                    break;
+                }
 
                 String[] parts = line.split(";", -1);
                 if (parts.length < 5) {
@@ -85,12 +91,12 @@ public class PersonaService {
                     continue;
                 }
 
-                String username = parts[0].trim();
-                String password = parts[1].trim();
-                String nombre = parts[2].trim();
-                String apellido = parts[3].trim();
-                String email = parts[4].trim();
-                String telefono = parts.length > 5 ? parts[5].trim() : "";
+                String username = InputSanitizer.sanitize(parts[0].trim());
+                String password = parts[1].trim(); // password will be hashed, not stored raw
+                String nombre = InputSanitizer.sanitize(parts[2].trim());
+                String apellido = InputSanitizer.sanitize(parts[3].trim());
+                String email = InputSanitizer.sanitize(parts[4].trim());
+                String telefono = parts.length > 5 ? InputSanitizer.sanitize(parts[5].trim()) : "";
                 String rolStr = parts.length > 6 ? parts[6].trim().toUpperCase() : "";
 
                 if (username.isEmpty() || password.isEmpty() || nombre.isEmpty()
@@ -136,8 +142,10 @@ public class PersonaService {
                     errors.add("Linea " + lineNum + ": error al guardar '" + username + "' - " + e.getMessage());
                 }
             }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al procesar el CSV: " + e.getMessage());
+            throw new RuntimeException("Error al procesar el CSV");
         }
 
         return new CsvImportResult(imported, errors);

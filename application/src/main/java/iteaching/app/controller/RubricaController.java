@@ -2,6 +2,7 @@ package iteaching.app.controller;
 
 import iteaching.app.dto.RubricaDTO;
 import iteaching.app.service.RubricaService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,7 @@ public class RubricaController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<RubricaDTO> crear(@RequestBody RubricaDTO dto) {
+    public ResponseEntity<RubricaDTO> crear(@Valid @RequestBody RubricaDTO dto) {
         return ResponseEntity.ok(rubricaService.crear(dto));
     }
 
