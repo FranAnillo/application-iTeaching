@@ -5,9 +5,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -99,6 +101,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        // Let Spring's own web exceptions pass through with their correct status codes
+        if (ex instanceof HttpRequestMethodNotSupportedException) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("timestamp", LocalDateTime.now().toString());
+            body.put("message", "Método HTTP no soportado");
+            body.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(body);
+        }
+        if (ex instanceof NoResourceFoundException) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("timestamp", LocalDateTime.now().toString());
+            body.put("message", "Recurso no encontrado");
+            body.put("status", HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        }
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("message", "Error interno del servidor");
