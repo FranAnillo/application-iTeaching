@@ -24,4 +24,7 @@ public class AsignaturaDTO {
     private String creadorNombre;
     private Set<Long> profesorIds;
     private Set<Long> estudianteIds;
+    @NotBlank
+    @Size(max = 20)
+    private String siglas;
 }

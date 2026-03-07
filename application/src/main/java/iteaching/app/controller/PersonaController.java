@@ -21,7 +21,9 @@ public class PersonaController {
         this.personaService = personaService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
+    // Antes: @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
+    // Ahora: cualquier usuario autenticado puede obtener la lista de usuarios
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<UsuarioDTO>> findAll() {
         return ResponseEntity.ok(personaService.findAll());
@@ -38,7 +40,9 @@ public class PersonaController {
         return ResponseEntity.ok(personaService.findByUsername(auth.getName()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
+    // Más seguro para el chat: cualquier usuario autenticado puede buscar
+    // (el servicio ya controla qué datos expone en UsuarioDTO)
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<UsuarioDTO>> search(@RequestParam String q) {
         return ResponseEntity.ok(personaService.search(q));

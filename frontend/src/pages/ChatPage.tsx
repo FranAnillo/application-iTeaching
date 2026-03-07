@@ -215,45 +215,73 @@ export default function ChatPage() {
   // --- Handle incoming WS message ---
   function handleIncomingMessage(meData: Usuario, mensaje: Mensaje) {
     var sel = selectedRef.current;
-
-    // If this message belongs to the current conversation
     var contactId = mensaje.remitenteId === meData.id ? mensaje.destinatarioId : mensaje.remitenteId;
 
+    // Si el chat está abierto con ese contacto, recarga la conversación desde el backend
     if (sel && sel.user.id === contactId) {
-      setMessages(function (prev: Mensaje[]) {
-        // Avoid duplicates
-        var exists = prev.some(function (m) { return m.id === mensaje.id; });
-        if (exists) return prev;
-        return prev.concat([mensaje]);
-      });
+      mensajesApi.getConversacion(contactId).then(function (res) {
+        setMessages(res.data);
+      }).catch(function () {});
     }
 
-    // Update contacts list
+    // Si no hay chat seleccionado y el mensaje va dirigido a mí, auto-abrir conversación con el remitente y recargar
+    if (!sel && mensaje.destinatarioId === meData.id) {
+      var autoContact: ContactInfo = {
+        user: {
+          id: contactId,
+          username: '',
+          nombre: mensaje.remitenteNombre,
+          apellido: '',
+          email: '',
+          telefono: '',
+          role: '',
+          puntuacion: 0,
+          avatar: null,
+        },
+        lastMessage: mensaje,
+        unread: 1,
+      };
+      setSelected(autoContact);
+      setShowMobileContacts(false);
+      mensajesApi.getConversacion(contactId).then(function (res) {
+        setMessages(res.data);
+      }).catch(function () {});
+      sel = autoContact;
+    }
+
+    // Actualizar lista de contactos (lógica existente)
     setContacts(function (prev: ContactInfo[]) {
       var updated = prev.slice();
       var idx = updated.findIndex(function (c) { return c.user.id === contactId; });
-
       if (idx >= 0) {
         updated[idx] = Object.assign({}, updated[idx], {
           lastMessage: mensaje,
-          unread: (sel && sel.user.id === contactId) ? 0 : updated[idx].unread + (mensaje.destinatarioId === meData.id ? 1 : 0)
+          unread: (sel && sel.user.id === contactId)
+            ? 0
+            : updated[idx].unread + (mensaje.destinatarioId === meData.id ? 1 : 0),
         });
       } else {
-        // New contact
         updated.unshift({
-          user: { id: contactId, username: '', nombre: mensaje.remitenteId === meData.id ? mensaje.destinatarioNombre : mensaje.remitenteNombre, apellido: '', email: '', telefono: '', role: '', puntuacion: 0, avatar: null },
+          user: {
+            id: contactId,
+            username: '',
+            nombre: mensaje.remitenteId === meData.id ? mensaje.destinatarioNombre : mensaje.remitenteNombre,
+            apellido: '',
+            email: '',
+            telefono: '',
+            role: '',
+            puntuacion: 0,
+            avatar: null,
+          },
           lastMessage: mensaje,
           unread: mensaje.destinatarioId === meData.id ? 1 : 0,
         });
       }
-
-      // Sort by last message time
       updated.sort(function (a, b) {
         if (!a.lastMessage) return 1;
         if (!b.lastMessage) return -1;
         return a.lastMessage.fechaEnvio > b.lastMessage.fechaEnvio ? -1 : 1;
       });
-
       return updated;
     });
   }

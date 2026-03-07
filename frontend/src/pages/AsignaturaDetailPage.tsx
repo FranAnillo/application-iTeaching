@@ -433,6 +433,10 @@ export default function AsignaturaDetailPage() {
             <input type="text" value={form.nombre || ''} onChange={function (e) { update('nombre', e.target.value); }} required className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
           </div>
           <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Siglas</label>
+            <input type="text" value={form.siglas || ''} onChange={function (e) { update('siglas', e.target.value); }} required maxLength={20} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+          <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Descripcion</label>
             <textarea value={form.descripcion || ''} onChange={function (e) { update('descripcion', e.target.value); }} rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
           </div>
@@ -472,7 +476,7 @@ export default function AsignaturaDetailPage() {
     <div>
       {/* Course header */}
       <div className="mb-6 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white shadow-lg">
-        <h2 className="text-2xl font-bold">{asignatura ? asignatura.nombre : ''}</h2>
+        <h2 className="text-2xl font-bold">{asignatura ? asignatura.nombre : ''} <span className="text-xs text-indigo-300">[{asignatura?.siglas}]</span></h2>
         <p className="mt-1 text-indigo-100">{asignatura && asignatura.descripcion ? asignatura.descripcion : 'Sin descripcion'}</p>
         {asignatura && asignatura.creadorNombre && (
           <p className="mt-2 text-sm text-indigo-200">Creador: {asignatura.creadorNombre}</p>

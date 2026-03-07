@@ -35,6 +35,7 @@ export interface Usuario {
 export interface Asignatura {
   id: number;
   nombre: string;
+  siglas: string;
   descripcion: string;
   url?: string;
   creadorId?: number;

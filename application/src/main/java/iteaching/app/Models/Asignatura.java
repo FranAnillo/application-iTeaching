@@ -39,6 +39,10 @@ public class Asignatura {
     @Column(nullable = false)
     private String nombre;
 
+    @NotBlank
+    @Column(nullable = false, length = 20)
+    private String siglas;
+
     @Column(length = 1000)
     private String descripcion;
 

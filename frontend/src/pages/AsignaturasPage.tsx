@@ -118,7 +118,7 @@ export default function AsignaturasPage() {
           {items.map((a) => (
             <div key={a.id} className="rounded-xl bg-white p-5 shadow-sm hover:shadow-md transition">
               <div className="mb-3">
-                <h3 className="font-semibold text-gray-900">{a.nombre}</h3>
+                <h3 className="font-semibold text-gray-900">{a.nombre} <span className="text-xs text-indigo-600">[{a.siglas}]</span></h3>
               </div>
               <p className="mb-3 line-clamp-2 text-sm text-gray-500">{a.descripcion || 'Sin descripción'}</p>
               {a.creadorNombre && (
@@ -157,10 +157,10 @@ export default function AsignaturasPage() {
             <div className="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-800 dark:bg-green-900/30 dark:text-green-300">
               <p className="mb-2 font-semibold">Formato del CSV (separado por ;)</p>
               <code className="block rounded bg-white p-2 text-xs dark:bg-gray-900 dark:text-gray-300">
-                nombre;descripcion;url
+                nombre;siglas;descripcion;url
               </code>
               <p className="mt-2 text-xs">
-                <strong>Campo obligatorio:</strong> nombre<br />
+                <strong>Campos obligatorios:</strong> nombre, siglas<br />
                 <strong>Campos opcionales:</strong> descripcion, url
               </p>
             </div>
@@ -203,7 +203,7 @@ export default function AsignaturasPage() {
                     </p>
                     <ul className="mt-1 list-disc pl-5 text-xs text-green-700 dark:text-green-400">
                       {importResult.imported.map((a) => (
-                        <li key={a.id}>{a.nombre}{a.descripcion ? ` - ${a.descripcion}` : ''}</li>
+                        <li key={a.id}>{a.nombre} [{a.siglas}]{a.descripcion ? ` - ${a.descripcion}` : ''}</li>
                       ))}
                     </ul>
                   </div>

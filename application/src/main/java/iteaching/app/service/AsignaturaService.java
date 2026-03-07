@@ -35,7 +35,7 @@ public class AsignaturaService {
     }
 
     public AsignaturaDTO findById(Long id) {
-        Asignatura a = asignaturaRepository.findById(id)
+        Asignatura a = asignaturaRepository.findById(id != null ? id : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada con id: " + id));
         return toDTO(a);
     }
@@ -52,6 +52,7 @@ public class AsignaturaService {
 
         Asignatura a = new Asignatura();
         a.setNombre(InputSanitizer.sanitize(dto.getNombre()));
+        a.setSiglas(InputSanitizer.sanitize(dto.getSiglas()));
         a.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
         a.setUrl(InputSanitizer.sanitizeUrl(dto.getUrl()));
         a.setCreador(creador);
@@ -60,9 +61,10 @@ public class AsignaturaService {
 
     @Transactional
     public AsignaturaDTO update(Long id, AsignaturaDTO dto) {
-        Asignatura a = asignaturaRepository.findById(id)
+        Asignatura a = asignaturaRepository.findById(id != null ? id : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada con id: " + id));
         a.setNombre(InputSanitizer.sanitize(dto.getNombre()));
+        a.setSiglas(InputSanitizer.sanitize(dto.getSiglas()));
         a.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
         a.setUrl(InputSanitizer.sanitizeUrl(dto.getUrl()));
         return toDTO(asignaturaRepository.save(a));
@@ -70,18 +72,18 @@ public class AsignaturaService {
 
     @Transactional
     public void delete(Long id) {
-        if (!asignaturaRepository.existsById(id))
+        if (!asignaturaRepository.existsById(id != null ? id : 0L))
             throw new RuntimeException("Asignatura no encontrada con id: " + id);
-        asignaturaRepository.deleteById(id);
+        asignaturaRepository.deleteById(id != null ? id : 0L);
     }
 
     // ===== Profesor assignment (admin only) =====
 
     @Transactional
     public AsignaturaDTO addProfesor(Long asignaturaId, Long personaId) {
-        Asignatura a = asignaturaRepository.findById(asignaturaId)
+        Asignatura a = asignaturaRepository.findById(asignaturaId != null ? asignaturaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
-        Persona p = personaRepository.findById(personaId)
+        Persona p = personaRepository.findById(personaId != null ? personaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Persona no encontrada"));
         if (p.getRole() != Usuarios.Role.ROLE_PROFESOR) {
             throw new RuntimeException("El usuario no tiene rol de profesor");
@@ -92,7 +94,7 @@ public class AsignaturaService {
 
     @Transactional
     public AsignaturaDTO removeProfesor(Long asignaturaId, Long personaId) {
-        Asignatura a = asignaturaRepository.findById(asignaturaId)
+        Asignatura a = asignaturaRepository.findById(asignaturaId != null ? asignaturaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
         a.getProfesores().removeIf(p -> p.getId().equals(personaId));
         return toDTO(asignaturaRepository.save(a));
@@ -102,9 +104,9 @@ public class AsignaturaService {
 
     @Transactional
     public AsignaturaDTO addEstudiante(Long asignaturaId, Long personaId) {
-        Asignatura a = asignaturaRepository.findById(asignaturaId)
+        Asignatura a = asignaturaRepository.findById(asignaturaId != null ? asignaturaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
-        Persona p = personaRepository.findById(personaId)
+        Persona p = personaRepository.findById(personaId != null ? personaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Persona no encontrada"));
         if (p.getRole() != Usuarios.Role.ROLE_ESTUDIANTE) {
             throw new RuntimeException("El usuario no tiene rol de estudiante");
@@ -115,7 +117,7 @@ public class AsignaturaService {
 
     @Transactional
     public AsignaturaDTO removeEstudiante(Long asignaturaId, Long personaId) {
-        Asignatura a = asignaturaRepository.findById(asignaturaId)
+        Asignatura a = asignaturaRepository.findById(asignaturaId != null ? asignaturaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
         a.getEstudiantes().removeIf(p -> p.getId().equals(personaId));
         return toDTO(asignaturaRepository.save(a));
@@ -125,7 +127,7 @@ public class AsignaturaService {
 
     @Transactional
     public AsignaturaDTO inscribirse(Long asignaturaId, String username) {
-        Asignatura a = asignaturaRepository.findById(asignaturaId)
+        Asignatura a = asignaturaRepository.findById(asignaturaId != null ? asignaturaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
         Persona p = personaRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -135,7 +137,7 @@ public class AsignaturaService {
 
     @Transactional
     public AsignaturaDTO desinscribirse(Long asignaturaId, String username) {
-        Asignatura a = asignaturaRepository.findById(asignaturaId)
+        Asignatura a = asignaturaRepository.findById(asignaturaId != null ? asignaturaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
         a.getEstudiantes().removeIf(p -> p.getUsername().equals(username));
         return toDTO(asignaturaRepository.save(a));
@@ -165,6 +167,7 @@ public class AsignaturaService {
 
                 Asignatura a = new Asignatura();
                 a.setNombre(InputSanitizer.sanitize(parts[0].trim()));
+                a.setSiglas(parts.length > 3 ? InputSanitizer.sanitize(parts[3].trim()) : "");
                 a.setDescripcion(parts.length > 1 ? InputSanitizer.sanitize(parts[1].trim()) : "");
                 a.setUrl(parts.length > 2 ? InputSanitizer.sanitizeUrl(parts[2].trim()) : "");
                 a.setCreador(admin);
@@ -188,6 +191,7 @@ public class AsignaturaService {
         AsignaturaDTO dto = new AsignaturaDTO();
         dto.setId(a.getId());
         dto.setNombre(a.getNombre());
+        dto.setSiglas(a.getSiglas());
         dto.setDescripcion(a.getDescripcion());
         dto.setUrl(a.getUrl());
         dto.setCreadorId(a.getCreador() != null ? a.getCreador().getId() : null);
