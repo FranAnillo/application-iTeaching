@@ -12,6 +12,8 @@ import iteaching.app.repository.PersonaRepository;
 import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import iteaching.app.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +26,9 @@ public class MaterialService {
     private final PersonaRepository personaRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final CarpetaRepository carpetaRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public MaterialService(MaterialRepository materialRepository,
                            PersonaRepository personaRepository,
@@ -40,7 +45,7 @@ public class MaterialService {
     }
 
     public MaterialDTO findById(Long id) {
-        Material m = materialRepository.findById(id)
+        Material m = materialRepository.findById(id != null ? id : 0L)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado con id: " + id));
         return toDTO(m);
     }
@@ -77,23 +82,30 @@ public class MaterialService {
         material.setAutor(autor);
 
         if (dto.getAsignaturaId() != null) {
-            Asignatura asignatura = asignaturaRepository.findById(dto.getAsignaturaId())
+            Asignatura asignatura = asignaturaRepository.findById(dto.getAsignaturaId() != null ? dto.getAsignaturaId() : 0L)
                     .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
             material.setAsignatura(asignatura);
         }
 
         if (dto.getCarpetaId() != null) {
-            Carpeta carpeta = carpetaRepository.findById(dto.getCarpetaId())
+            Carpeta carpeta = carpetaRepository.findById(dto.getCarpetaId() != null ? dto.getCarpetaId() : 0L)
                     .orElseThrow(() -> new RuntimeException("Carpeta no encontrada"));
             material.setCarpeta(carpeta);
         }
 
-        return toDTO(materialRepository.save(material));
+        MaterialDTO result = toDTO(materialRepository.save(material));
+        // Notificar a los estudiantes de la asignatura
+        if (material.getAsignatura() != null) {
+            for (Persona estudiante : material.getAsignatura().getEstudiantes()) {
+                notificationService.notifyMaterialUploaded(estudiante.getEmail(), material.getAsignatura().getNombre(), material.getTitulo());
+            }
+        }
+        return result;
     }
 
     @Transactional
     public MaterialDTO update(Long id, MaterialDTO dto) {
-        Material material = materialRepository.findById(id)
+        Material material = materialRepository.findById(id != null ? id : 0L)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado con id: " + id));
 
         material.setTitulo(InputSanitizer.sanitize(dto.getTitulo()));
@@ -104,7 +116,7 @@ public class MaterialService {
         }
 
         if (dto.getAsignaturaId() != null) {
-            Asignatura asignatura = asignaturaRepository.findById(dto.getAsignaturaId())
+            Asignatura asignatura = asignaturaRepository.findById(dto.getAsignaturaId() != null ? dto.getAsignaturaId() : 0L)
                     .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
             material.setAsignatura(asignatura);
         } else {
@@ -112,7 +124,7 @@ public class MaterialService {
         }
 
         if (dto.getCarpetaId() != null) {
-            Carpeta carpeta = carpetaRepository.findById(dto.getCarpetaId())
+            Carpeta carpeta = carpetaRepository.findById(dto.getCarpetaId() != null ? dto.getCarpetaId() : 0L)
                     .orElseThrow(() -> new RuntimeException("Carpeta no encontrada"));
             material.setCarpeta(carpeta);
         } else {
@@ -124,9 +136,9 @@ public class MaterialService {
 
     @Transactional
     public void delete(Long id) {
-        if (!materialRepository.existsById(id))
+        if (!materialRepository.existsById(id != null ? id : 0L))
             throw new RuntimeException("Material no encontrado con id: " + id);
-        materialRepository.deleteById(id);
+        materialRepository.deleteById(id != null ? id : 0L);
     }
 
     private MaterialDTO toDTO(Material m) {

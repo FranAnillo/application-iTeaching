@@ -10,6 +10,8 @@ import iteaching.app.repository.TareaRepository;
 import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import iteaching.app.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +23,9 @@ public class EntregaService {
     private final EntregaRepository entregaRepository;
     private final TareaRepository tareaRepository;
     private final PersonaRepository personaRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public EntregaService(EntregaRepository entregaRepository,
                           TareaRepository tareaRepository,
@@ -42,7 +47,7 @@ public class EntregaService {
 
     @Transactional
     public EntregaDTO submit(EntregaDTO dto, String username) {
-        Tarea tarea = tareaRepository.findById(dto.getTareaId())
+        Tarea tarea = tareaRepository.findById(dto.getTareaId() != null ? dto.getTareaId() : 0L)
                 .orElseThrow(() -> new RuntimeException("Tarea no encontrada"));
         Persona estudiante = personaRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -58,17 +63,23 @@ public class EntregaService {
         e.setTarea(tarea);
         e.setEstudiante(estudiante);
 
-        return toDTO(entregaRepository.save(e));
+        EntregaDTO result = toDTO(entregaRepository.save(e));
+        // Notificar al estudiante
+        notificationService.notifyMaterialUploaded(estudiante.getEmail(), tarea.getAsignatura().getNombre(), tarea.getTitulo());
+        return result;
     }
 
     /** Instructor grades a submission */
     @Transactional
     public EntregaDTO calificar(Long entregaId, Double calificacion, String comentario) {
-        Entrega e = entregaRepository.findById(entregaId)
+        Entrega e = entregaRepository.findById(entregaId != null ? entregaId : 0L)
                 .orElseThrow(() -> new RuntimeException("Entrega no encontrada"));
         e.setCalificacion(calificacion);
         e.setComentarioProfesor(InputSanitizer.sanitize(comentario));
-        return toDTO(entregaRepository.save(e));
+        EntregaDTO result = toDTO(entregaRepository.save(e));
+        // Notificar calificación
+        notificationService.notifyGrade(e.getEstudiante().getEmail(), e.getTarea().getAsignatura().getNombre(), e.getTarea().getTitulo(), String.valueOf(calificacion));
+        return result;
     }
 
     private EntregaDTO toDTO(Entrega e) {

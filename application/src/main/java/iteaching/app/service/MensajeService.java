@@ -8,6 +8,7 @@ import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +21,9 @@ public class MensajeService {
     private final PersonaRepository personaRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final NotificacionService notificacionService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public MensajeService(MensajeRepository mensajeRepository,
                           PersonaRepository personaRepository,
@@ -50,7 +54,7 @@ public class MensajeService {
     public MensajeDTO enviarMensaje(MensajeDTO dto, String username) {
         Persona remitente = personaRepository.findByUsername(username)
             .orElseThrow(() -> new RuntimeException("Remitente no encontrado"));
-        Persona destinatario = personaRepository.findById(dto.getDestinatarioId())
+        Persona destinatario = personaRepository.findById(dto.getDestinatarioId() != null ? dto.getDestinatarioId() : 0L)
             .orElseThrow(() -> new RuntimeException("Destinatario no encontrado"));
 
         Mensaje mensaje = new Mensaje();
@@ -61,10 +65,10 @@ public class MensajeService {
         mensaje.setDestinatario(destinatario);
 
         if (dto.getAsignaturaId() != null) {
-            mensaje.setAsignatura(asignaturaRepository.findById(dto.getAsignaturaId()).orElse(null));
+            mensaje.setAsignatura(asignaturaRepository.findById(dto.getAsignaturaId() != null ? dto.getAsignaturaId() : 0L).orElse(null));
         }
 
-        Mensaje saved = mensajeRepository.save(mensaje);
+        MensajeDTO result = toDTO(mensajeRepository.save(mensaje));
 
         // Create notification for recipient
         notificacionService.crearNotificacion(
@@ -75,7 +79,10 @@ public class MensajeService {
             "/mensajes"
         );
 
-        return toDTO(saved);
+        // Notify recipient via email
+        notificationService.notifyMessage(destinatario.getEmail(), remitente.getNombreCompleto(), dto.getContenido());
+
+        return result;
     }
 
     public void marcarLeidos(Long userId1, Long userId2) {

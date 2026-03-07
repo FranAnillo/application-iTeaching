@@ -10,6 +10,8 @@ import iteaching.app.repository.PersonaRepository;
 import iteaching.app.security.InputSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import iteaching.app.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +23,9 @@ public class AnuncioService {
     private final AnuncioRepository anuncioRepository;
     private final AsignaturaRepository asignaturaRepository;
     private final PersonaRepository personaRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public AnuncioService(AnuncioRepository anuncioRepository,
                           AsignaturaRepository asignaturaRepository,
@@ -36,13 +41,13 @@ public class AnuncioService {
     }
 
     public AnuncioDTO findById(Long id) {
-        return toDTO(anuncioRepository.findById(id)
+        return toDTO(anuncioRepository.findById(id != null ? id : 0L)
                 .orElseThrow(() -> new RuntimeException("Anuncio no encontrado")));
     }
 
     @Transactional
     public AnuncioDTO create(AnuncioDTO dto, String username) {
-        Asignatura asignatura = asignaturaRepository.findById(dto.getAsignaturaId())
+        Asignatura asignatura = asignaturaRepository.findById(dto.getAsignaturaId() != null ? dto.getAsignaturaId() : 0L)
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
         Persona autor = personaRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -55,14 +60,19 @@ public class AnuncioService {
         a.setAsignatura(asignatura);
         a.setAutor(autor);
 
-        return toDTO(anuncioRepository.save(a));
+        AnuncioDTO result = toDTO(anuncioRepository.save(a));
+        // Notificar a los estudiantes de la asignatura
+        for (Persona estudiante : asignatura.getEstudiantes()) {
+            notificationService.notifyContentAdded(estudiante.getEmail(), asignatura.getNombre(), dto.getTitulo());
+        }
+        return result;
     }
 
     @Transactional
     public void delete(Long id) {
-        if (!anuncioRepository.existsById(id))
+        if (!anuncioRepository.existsById(id != null ? id : 0L))
             throw new RuntimeException("Anuncio no encontrado");
-        anuncioRepository.deleteById(id);
+        anuncioRepository.deleteById(id != null ? id : 0L);
     }
 
     private AnuncioDTO toDTO(Anuncio a) {

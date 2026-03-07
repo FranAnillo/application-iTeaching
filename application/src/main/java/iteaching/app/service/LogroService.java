@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,9 @@ public class LogroService {
     private final LogroRepository logroRepository;
     private final PersonaRepository personaRepository;
     private final NotificacionService notificacionService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public LogroService(LogroRepository logroRepository,
                         PersonaRepository personaRepository,
@@ -125,5 +129,16 @@ public class LogroService {
         dto.setCategoria(l.getCategoria().name());
         dto.setValorObjetivo(l.getValorObjetivo());
         return dto;
+    }
+
+    public void asignarLogro(Long userId, Long logroId) {
+        Persona persona = personaRepository.findById(userId != null ? userId : 0L)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Logro logro = logroRepository.findById(logroId != null ? logroId : 0L)
+            .orElseThrow(() -> new RuntimeException("Logro no encontrado"));
+        persona.getLogros().add(logro);
+        personaRepository.save(persona);
+        // Notificar logro
+        notificationService.notifyAchievement(persona.getEmail(), logro.getNombre());
     }
 }
