@@ -87,9 +87,11 @@ $env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
-> **Nota:** el script `start.ps1` también ejecuta las instalaciones necesarias de npm para el frontend,
-> así que no es imprescindible instalarlas manualmente antes de usarlo. Si arrancas el frontend
-directamente (`npm run dev`), ejecuta `npm install` primero.
+> **Nota:** los scripts `start.ps1` (Windows) y `start.sh` (macOS/Linux) ejecutan las
+> instalaciones necesarias de npm para el frontend por ti, por lo que generalmente no es
+> imprescindible correr `npm install` manualmente. Si arrancas el frontend directamente
+> (`npm run dev`), ejecuta `npm install` primero.
+
 
 El backend estará disponible en `http://localhost:8081`.
 

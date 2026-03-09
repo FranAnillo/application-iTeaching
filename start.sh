@@ -57,7 +57,11 @@ fi
 # --- 5. Arrancar Frontend ---
 echo -e "\033[0;33m[4/4] Arrancando frontend (Vite dev server, puerto 5173)...\033[0m"
 cd "$FRONTEND"
-npm install > /dev/null 2>&1 # Instala dependencias por si acaso
+# sólo ejecutar npm install si parece que falta Vite (ahorra tiempo en reinicios)
+if [ ! -d "node_modules/vite" ]; then
+    echo -e "\033[0;33m    instalando dependencias npm...\033[0m"
+    npm install > /dev/null 2>&1
+fi
 npm run dev > frontend.log 2>&1 &
 FRONTEND_PID=$!
 
