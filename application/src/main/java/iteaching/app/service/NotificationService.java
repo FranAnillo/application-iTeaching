@@ -8,10 +8,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class NotificationService {
 
-    @Autowired
+    // mailSender is only required in production; in the local profile we don't have a SMTP server,
+    // so we mark the dependency as optional.  sendNotification() will be no-op when it's null.
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
     public void sendNotification(String to, String subject, String text) {
+        if (mailSender == null) {
+            // running without mail support (local profile); ignore
+            return;
+        }
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setSubject(subject);
