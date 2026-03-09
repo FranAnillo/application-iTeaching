@@ -71,6 +71,18 @@ if ($ready) {
 
 # --- 5. Arrancar Frontend ---
 Write-Host "[4/4] Arrancando frontend (Vite dev server, puerto 5173)..." -ForegroundColor Yellow
+# make sure dependencies are installed (quietly)
+$installJob = Start-Job -ScriptBlock {
+    param($frontendDir)
+    Set-Location $frontendDir
+    if (-not (Test-Path "node_modules\vite")) {
+        Write-Host "    instalando dependencias npm..." -ForegroundColor DarkYellow
+        npm install > $null 2>&1
+    }
+} -ArgumentList $FRONTEND
+# wait for install to finish
+Wait-Job $installJob | Out-Null
+
 $frontendJob = Start-Job -ScriptBlock {
     param($frontendDir)
     Set-Location $frontendDir
