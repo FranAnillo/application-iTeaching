@@ -1,9 +1,14 @@
 package iteaching.app.service;
 
+import iteaching.app.Models.Persona;
+import iteaching.app.Models.Anuncio;
+import iteaching.app.repository.PersonaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class NotificationService {
@@ -12,6 +17,9 @@ public class NotificationService {
     // so we mark the dependency as optional.  sendNotification() will be no-op when it's null.
     @Autowired(required = false)
     private JavaMailSender mailSender;
+
+    @Autowired
+    private PersonaRepository personaRepository;
 
     public void sendNotification(String to, String subject, String text) {
         if (mailSender == null) {
@@ -53,5 +61,18 @@ public class NotificationService {
         String subject = "Nuevo material en " + asignatura;
         String text = "Se ha subido el material: " + material;
         sendNotification(to, subject, text);
+    }
+
+    public void sendAnnouncement(Anuncio anuncio) {
+        if (anuncio.isGlobal()) {
+            List<Persona> all = personaRepository.findAll();
+            for (Persona p : all) {
+                sendNotification(p.getEmail(), anuncio.getTitulo(), anuncio.getContenido());
+            }
+        } else if (anuncio.getDestinatarios() != null) {
+            for (Persona p : anuncio.getDestinatarios()) {
+                sendNotification(p.getEmail(), anuncio.getTitulo(), anuncio.getContenido());
+            }
+        }
     }
 }

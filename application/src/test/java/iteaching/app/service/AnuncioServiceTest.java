@@ -3,10 +3,12 @@ package iteaching.app.service;
 import iteaching.app.Models.Anuncio;
 import iteaching.app.Models.Asignatura;
 import iteaching.app.Models.Persona;
+import iteaching.app.Models.Usuarios;
 import iteaching.app.dto.AnuncioDTO;
 import iteaching.app.repository.AnuncioRepository;
 import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.PersonaRepository;
+import iteaching.app.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,11 +30,17 @@ import static org.mockito.Mockito.*;
 @DisplayName("AnuncioService — unit tests")
 class AnuncioServiceTest {
 
-    @Mock private AnuncioRepository anuncioRepository;
-    @Mock private AsignaturaRepository asignaturaRepository;
-    @Mock private PersonaRepository personaRepository;
+    @Mock
+    private AnuncioRepository anuncioRepository;
+    @Mock
+    private AsignaturaRepository asignaturaRepository;
+    @Mock
+    private PersonaRepository personaRepository;
+    @Mock
+    private NotificationService notificationService;
 
-    @InjectMocks private AnuncioService service;
+    @InjectMocks
+    private AnuncioService service;
 
     private Persona autor;
     private Asignatura asignatura;
@@ -45,6 +53,7 @@ class AnuncioServiceTest {
         autor.setUsername("prof1");
         autor.setNombre("Prof");
         autor.setApellido("Uno");
+        autor.setRole(Usuarios.Role.ROLE_PROFESOR);
 
         asignatura = new Asignatura();
         asignatura.setId(5L);
@@ -64,7 +73,7 @@ class AnuncioServiceTest {
 
     @Test
     void findByAsignatura_returnsList() {
-        when(anuncioRepository.findByAsignaturaIdOrderByFechaCreacionDesc(5L))
+        when(anuncioRepository.findByAsignaturaIdOrGlobalTrueOrderByFechaCreacionDesc(5L))
                 .thenReturn(List.of(anuncio));
         List<AnuncioDTO> result = service.findByAsignatura(5L);
         assertEquals(1, result.size());
@@ -85,55 +94,164 @@ class AnuncioServiceTest {
         assertThrows(RuntimeException.class, () -> service.findById(999L));
     }
 
+    // ── PROFESOR tests ────────────────────────────────────────────────────────
+
     @Test
-    void create_success() {
+    @DisplayName("PROFESOR: crea anuncio en asignatura asignada => OK")
+    void create_profesor_success() {
         AnuncioDTO dto = new AnuncioDTO();
         dto.setTitulo("Nuevo anuncio");
         dto.setContenido("Contenido del anuncio");
         dto.setImportante(false);
         dto.setAsignaturaId(5L);
 
-        when(asignaturaRepository.findById(5L)).thenReturn(Optional.of(asignatura));
         when(personaRepository.findByUsername("prof1")).thenReturn(Optional.of(autor));
+        when(asignaturaRepository.existsByIdAndProfesoresId(5L, 1L)).thenReturn(true);
+        when(asignaturaRepository.findById(5L)).thenReturn(Optional.of(asignatura));
         when(anuncioRepository.save(any(Anuncio.class))).thenAnswer(inv -> {
             Anuncio a = inv.getArgument(0);
             a.setId(20L);
             return a;
         });
 
-        AnuncioDTO result = service.create(dto, "prof1");
+        AnuncioDTO result = service.create(dto, "prof1", Usuarios.Role.ROLE_PROFESOR);
         assertNotNull(result);
         assertEquals("Nuevo anuncio", result.getTitulo());
-        assertFalse(result.getImportante());
+        assertFalse(result.isGlobal());
     }
 
     @Test
-    void create_defaultsImportanteToFalse() {
+    @DisplayName("PROFESOR: sin asignaturaId => IllegalArgumentException")
+    void create_profesor_sinAsignatura_throws() {
+        AnuncioDTO dto = new AnuncioDTO();
+        dto.setTitulo("T");
+        dto.setContenido("C");
+        // asignaturaId null
+
+        when(personaRepository.findByUsername("prof1")).thenReturn(Optional.of(autor));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create(dto, "prof1", Usuarios.Role.ROLE_PROFESOR));
+    }
+
+    @Test
+    @DisplayName("PROFESOR: asignatura no asignada al profesor => SecurityException")
+    void create_profesor_asignaturaNoAsignada_throws() {
         AnuncioDTO dto = new AnuncioDTO();
         dto.setTitulo("T");
         dto.setContenido("C");
         dto.setAsignaturaId(5L);
-        // importante not set
 
-        when(asignaturaRepository.findById(5L)).thenReturn(Optional.of(asignatura));
         when(personaRepository.findByUsername("prof1")).thenReturn(Optional.of(autor));
+        when(asignaturaRepository.existsByIdAndProfesoresId(5L, 1L)).thenReturn(false);
+
+        assertThrows(SecurityException.class,
+                () -> service.create(dto, "prof1", Usuarios.Role.ROLE_PROFESOR));
+    }
+
+    @Test
+    @DisplayName("PROFESOR: importante por defecto false")
+    void create_profesor_defaultsImportanteToFalse() {
+        AnuncioDTO dto = new AnuncioDTO();
+        dto.setTitulo("T");
+        dto.setContenido("C");
+        dto.setAsignaturaId(5L);
+
+        when(personaRepository.findByUsername("prof1")).thenReturn(Optional.of(autor));
+        when(asignaturaRepository.existsByIdAndProfesoresId(5L, 1L)).thenReturn(true);
+        when(asignaturaRepository.findById(5L)).thenReturn(Optional.of(asignatura));
         when(anuncioRepository.save(any(Anuncio.class))).thenAnswer(inv -> {
             Anuncio a = inv.getArgument(0);
             a.setId(21L);
             return a;
         });
 
-        AnuncioDTO result = service.create(dto, "prof1");
+        AnuncioDTO result = service.create(dto, "prof1", Usuarios.Role.ROLE_PROFESOR);
         assertFalse(result.getImportante());
     }
 
+    // ── ADMIN tests ───────────────────────────────────────────────────────────
+
     @Test
-    void create_asignaturaNotFound_throws() {
+    @DisplayName("ADMIN: sin asignaturaId => anuncio global")
+    void create_admin_global() {
+        Persona admin = new Persona();
+        admin.setId(2L);
+        admin.setUsername("admin1");
+        admin.setNombre("Admin");
+        admin.setApellido("Global");
+        admin.setRole(Usuarios.Role.ROLE_ADMIN);
+
         AnuncioDTO dto = new AnuncioDTO();
-        dto.setAsignaturaId(999L);
-        when(asignaturaRepository.findById(999L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> service.create(dto, "prof1"));
+        dto.setTitulo("Aviso plataforma");
+        dto.setContenido("Sistema en mantenimiento el viernes");
+        // asignaturaId null => global
+
+        when(personaRepository.findByUsername("admin1")).thenReturn(Optional.of(admin));
+        when(anuncioRepository.save(any(Anuncio.class))).thenAnswer(inv -> {
+            Anuncio a = inv.getArgument(0);
+            a.setId(30L);
+            return a;
+        });
+
+        AnuncioDTO result = service.create(dto, "admin1", Usuarios.Role.ROLE_ADMIN);
+        assertNotNull(result);
+        assertTrue(result.isGlobal());
+        assertNull(result.getAsignaturaId());
     }
+
+    @Test
+    @DisplayName("ADMIN: con asignaturaId => anuncio de asignatura")
+    void create_admin_conAsignatura() {
+        Persona admin = new Persona();
+        admin.setId(2L);
+        admin.setUsername("admin1");
+        admin.setNombre("Admin");
+        admin.setApellido("Global");
+        admin.setRole(Usuarios.Role.ROLE_ADMIN);
+
+        AnuncioDTO dto = new AnuncioDTO();
+        dto.setTitulo("Cambio aula");
+        dto.setContenido("La clase de Historia cambia al aula B2");
+        dto.setAsignaturaId(5L);
+
+        when(personaRepository.findByUsername("admin1")).thenReturn(Optional.of(admin));
+        when(asignaturaRepository.findById(5L)).thenReturn(Optional.of(asignatura));
+        when(anuncioRepository.save(any(Anuncio.class))).thenAnswer(inv -> {
+            Anuncio a = inv.getArgument(0);
+            a.setId(31L);
+            return a;
+        });
+
+        AnuncioDTO result = service.create(dto, "admin1", Usuarios.Role.ROLE_ADMIN);
+        assertNotNull(result);
+        assertFalse(result.isGlobal());
+        assertEquals(5L, result.getAsignaturaId());
+    }
+
+    @Test
+    @DisplayName("ADMIN: asignaturaId inexistente => RuntimeException")
+    void create_admin_asignaturaNotFound_throws() {
+        Persona admin = new Persona();
+        admin.setId(2L);
+        admin.setUsername("admin1");
+        admin.setNombre("Admin");
+        admin.setApellido("Global");
+        admin.setRole(Usuarios.Role.ROLE_ADMIN);
+
+        AnuncioDTO dto = new AnuncioDTO();
+        dto.setTitulo("T");
+        dto.setContenido("C");
+        dto.setAsignaturaId(999L);
+
+        when(personaRepository.findByUsername("admin1")).thenReturn(Optional.of(admin));
+        when(asignaturaRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> service.create(dto, "admin1", Usuarios.Role.ROLE_ADMIN));
+    }
+
+    // ── Delete tests ──────────────────────────────────────────────────────────
 
     @Test
     void delete_success() {

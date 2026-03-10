@@ -1,7 +1,6 @@
 package iteaching.app.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,9 +19,26 @@ public class AnuncioDTO {
     private String contenido;
     private String fechaCreacion;
     private Boolean importante;
-    @NotNull
     private Long asignaturaId;
     private String asignaturaNombre;
     private Long autorId;
     private String autorNombre;
+    private boolean global;
+    private String destinatarios;
+
+    public boolean isGlobal() {
+        return global;
+    }
+
+    public void setGlobal(boolean global) {
+        this.global = global;
+    }
+
+    public String getDestinatarios() {
+        return destinatarios;
+    }
+
+    public void setDestinatarios(String destinatarios) {
+        this.destinatarios = destinatarios;
+    }
 }

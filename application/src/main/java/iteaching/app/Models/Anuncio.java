@@ -35,11 +35,34 @@ public class Anuncio {
     @Column(name = "importante")
     private Boolean importante = false;
 
+    @Column(name = "global")
+    private Boolean global = false;
+
+    @ManyToMany
+    @JoinTable(name = "anuncio_destinatarios", joinColumns = @JoinColumn(name = "anuncio_id"), inverseJoinColumns = @JoinColumn(name = "persona_id"))
+    private java.util.Set<Persona> destinatarios;
+
     @ManyToOne
-    @JoinColumn(name = "asignatura_id", nullable = false)
+    @JoinColumn(name = "asignatura_id", nullable = true)
     private Asignatura asignatura;
 
     @ManyToOne
     @JoinColumn(name = "autor_id", nullable = false)
     private Persona autor;
+
+    public boolean isGlobal() {
+        return global;
+    }
+
+    public void setGlobal(boolean global) {
+        this.global = global;
+    }
+
+    public java.util.Set<Persona> getDestinatarios() {
+        return destinatarios;
+    }
+
+    public void setDestinatarios(java.util.Set<Persona> destinatarios) {
+        this.destinatarios = destinatarios;
+    }
 }

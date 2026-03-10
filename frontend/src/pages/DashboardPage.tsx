@@ -36,6 +36,13 @@ export default function DashboardPage() {
   var progresoList = progresoState[0];
   var setProgresoList = progresoState[1];
 
+  var anuncioFormState = useState({ titulo: '', contenido: '', destinatario: 'global' });
+  var anuncioForm = anuncioFormState[0];
+  var setAnuncioForm = anuncioFormState[1];
+  var anuncioStatusState = useState('');
+  var anuncioStatus = anuncioStatusState[0];
+  var setAnuncioStatus = anuncioStatusState[1];
+
   useEffect(function () {
     Promise.all([
       asignaturasApi.getAll(),
@@ -55,7 +62,20 @@ export default function DashboardPage() {
       // Load upcoming deadlines & announcements per course
       var deadlines: { titulo: string; fecha: string; tipo: string; asignatura: string }[] = [];
       var anuncios: Anuncio[] = [];
+      var anuncioIds = new Set<number>();
       var tareaPromises: Promise<any>[] = [];
+
+      // Fetch global announcements first
+      tareaPromises.push(
+        anunciosApi.getGlobal().then(function (r) {
+          r.data.forEach(function (a: Anuncio) {
+            if (!anuncioIds.has(a.id)) {
+              anuncios.push(a);
+              anuncioIds.add(a.id);
+            }
+          });
+        }).catch(function () { })
+      );
 
       allCursos.forEach(function (asig: Asignatura) {
         tareaPromises.push(
@@ -71,12 +91,17 @@ export default function DashboardPage() {
                 });
               }
             });
-          }).catch(function () {})
+          }).catch(function () { })
         );
         tareaPromises.push(
           anunciosApi.getByAsignatura(asig.id).then(function (r) {
-            anuncios = anuncios.concat(r.data);
-          }).catch(function () {})
+            r.data.forEach(function (a: Anuncio) {
+              if (!anuncioIds.has(a.id)) {
+                anuncios.push(a);
+                anuncioIds.add(a.id);
+              }
+            });
+          }).catch(function () { })
         );
       });
 
@@ -90,10 +115,16 @@ export default function DashboardPage() {
       // Load progress
       progresoApi.getGlobal().then(function (r) {
         setProgresoList(r.data);
-      }).catch(function () {});
+      }).catch(function () { });
 
-    }).catch(function () {}).finally(function () { setLoading(false); });
+    }).catch(function () { }).finally(function () { setLoading(false); });
   }, []);
+
+  function handleSendAnuncio(event: React.FormEvent) {
+    event.preventDefault();
+    // Lógica para enviar el anuncio
+    setAnuncioStatus('Anuncio enviado con éxito');
+  }
 
   var cards = [
     { label: 'Cursos', value: stats.asignaturas, to: '/asignaturas', color: 'bg-blue-500' },
@@ -133,85 +164,32 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Mis Cursos */}
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Cursos</h3>
-            {user && user.role === 'ROLE_ADMIN' && (
-              <Link to="/asignaturas/new" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">+ Nuevo curso</Link>
-            )}
-          </div>
-          {cursos.length === 0 ? (
-            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay cursos disponibles. Crea tu primer curso.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cursos.map(function (c) {
-                return (
-                  <Link key={c.id} to={'/asignaturas/' + c.id} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition overflow-hidden">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
-                      <h4 className="font-bold text-white text-lg">{c.nombre}</h4>
-                      {c.creadorNombre && <p className="text-indigo-100 text-sm">{c.creadorNombre}</p>}
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{c.descripcion || 'Sin descripcion'}</p>
-                      <div className="mt-3 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
-                        <span>{c.estudianteIds ? c.estudianteIds.length : 0} estudiantes</span>
-                        <span className="text-indigo-600 font-medium">Entrar &gt;</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Enhanced sections row */}
-          <div className="grid gap-4 lg:grid-cols-2 mt-8">
-            {/* Upcoming deadlines */}
-            <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📅 Próximos Plazos</h3>
-                <Link to="/calendario" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Ver calendario</Link>
+          {/* Only show for non-admin users */}
+          {user && user.role !== 'ROLE_ADMIN' && (
+            <>
+              {/* Mis Cursos */}
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Cursos</h3>
+                {user && user.role === 'ROLE_ADMIN' && (
+                  <Link to="/asignaturas/new" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">+ Nuevo curso</Link>
+                )}
               </div>
-              {upcoming.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No hay plazos próximos</p>
+              {cursos.length === 0 ? (
+                <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay cursos disponibles. Crea tu primer curso.</p>
               ) : (
-                <div className="space-y-3">
-                  {upcoming.map(function (item, idx) {
-                    var typeColor = item.tipo === 'EVALUACION' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                    item.tipo === 'SIMULACRO' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {cursos.map(function (c) {
                     return (
-                      <div key={idx} className="flex items-center gap-3">
-                        <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + typeColor}>
-                          {item.tipo}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.titulo}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.asignatura}</p>
+                      <Link key={c.id} to={'/asignaturas/' + c.id} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition overflow-hidden">
+                        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
+                          <h4 className="font-bold text-white text-lg">{c.nombre}</h4>
+                          {c.creadorNombre && <p className="text-indigo-100 text-sm">{c.creadorNombre}</p>}
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{item.fecha}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Recent announcements */}
-            <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📢 Anuncios Recientes</h3>
-              {recentAnuncios.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No hay anuncios recientes</p>
-              ) : (
-                <div className="space-y-3">
-                  {recentAnuncios.map(function (a) {
-                    return (
-                      <Link key={a.id} to={'/asignaturas/' + a.asignaturaId} className="block">
-                        <div className="flex items-start gap-2">
-                          {a.importante && <span className="text-orange-500 text-xs mt-0.5">⚠️</span>}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{a.titulo}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{a.asignaturaNombre} · {a.fechaCreacion ? a.fechaCreacion.substring(0, 10) : ''}</p>
+                        <div className="p-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{c.descripcion || 'Sin descripcion'}</p>
+                          <div className="mt-3 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                            <span>{c.estudianteIds ? c.estudianteIds.length : 0} estudiantes</span>
+                            <span className="text-indigo-600 font-medium">Entrar &gt;</span>
                           </div>
                         </div>
                       </Link>
@@ -219,31 +197,191 @@ export default function DashboardPage() {
                   })}
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Progress summary */}
-          {progresoList.length > 0 && (
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📊 Mi Progreso</h3>
-                <Link to="/calificaciones" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Ver calificaciones</Link>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {progresoList.map(function (p) {
-                  return (
-                    <div key={p.asignaturaId} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-4">
-                      <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-2 truncate">{p.asignaturaNombre}</h4>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-                        <div className="bg-indigo-500 h-2 rounded-full" style={{ width: p.porcentajeProgreso + '%' }}></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span>{Math.round(p.porcentajeProgreso)}% completado</span>
-                        <span>Promedio: {p.promedioCalificaciones || '-'}</span>
-                      </div>
+              {/* Enhanced sections row */}
+              <div className="grid gap-4 lg:grid-cols-2 mt-8">
+                {/* Upcoming deadlines */}
+                <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📅 Próximos Plazos</h3>
+                    <Link to="/calendario" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Ver calendario</Link>
+                  </div>
+                  {upcoming.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No hay plazos próximos</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {upcoming.map(function (item, idx) {
+                        var typeColor = item.tipo === 'EVALUACION' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          item.tipo === 'SIMULACRO' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + typeColor}>
+                              {item.tipo}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.titulo}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{item.asignatura}</p>
+                            </div>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{item.fecha}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+
+                {/* Recent announcements */}
+                <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📢 Anuncios Recientes</h3>
+                  {recentAnuncios.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No hay anuncios recientes</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentAnuncios.map(function (a) {
+                        return (
+                          <div key={a.id} className="block">
+                            <div className="flex items-start gap-2">
+                              {a.importante && <span className="text-orange-500 text-xs mt-0.5">⚠️</span>}
+                              <div className="flex-1 min-w-0">
+                                {a.asignaturaId ? (
+                                  <Link to={'/asignaturas/' + a.asignaturaId} className="text-sm font-medium text-gray-900 dark:text-white truncate hover:underline block">
+                                    {a.titulo}
+                                  </Link>
+                                ) : (
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{a.titulo}</p>
+                                )}
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {a.asignaturaNombre || 'Anuncio Global'} · {a.fechaCreacion ? a.fechaCreacion.substring(0, 10) : ''}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress summary */}
+              {progresoList.length > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📊 Mi Progreso</h3>
+                    <Link to="/calificaciones" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Ver calificaciones</Link>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {progresoList.map(function (p) {
+                      return (
+                        <div key={p.asignaturaId} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-4">
+                          <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-2 truncate">{p.asignaturaNombre}</h4>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                            <div className="bg-indigo-500 h-2 rounded-full" style={{ width: p.porcentajeProgreso + '%' }}></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>{Math.round(p.porcentajeProgreso)}% completado</span>
+                            <span>Promedio: {p.promedioCalificaciones || '-'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* For admin: only show recent announcements, stats, and announcement form */}
+          {user && user.role === 'ROLE_ADMIN' && (
+            <div className="grid gap-4 lg:grid-cols-2 mt-8">
+              {/* Recent announcements */}
+              <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5 col-span-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📢 Anuncios Recientes</h3>
+                {recentAnuncios.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No hay anuncios recientes</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentAnuncios.map(function (a) {
+                      return (
+                        <div key={a.id} className="block">
+                          <div className="flex items-start gap-2">
+                            {a.importante && <span className="text-orange-500 text-xs mt-0.5">⚠️</span>}
+                            <div className="flex-1 min-w-0">
+                              {a.asignaturaId ? (
+                                <Link to={'/asignaturas/' + a.asignaturaId} className="text-sm font-medium text-gray-900 dark:text-white truncate hover:underline block">
+                                  {a.titulo}
+                                </Link>
+                              ) : (
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{a.titulo}</p>
+                              )}
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {a.asignaturaNombre || 'Anuncio Global'} · {a.fechaCreacion ? a.fechaCreacion.substring(0, 10) : ''}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Admin announcement form */}
+              <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5 col-span-2 mt-8">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Enviar anuncio global o a subgrupo</h3>
+                <form onSubmit={async function (event) {
+                  event.preventDefault();
+                  setAnuncioStatus('');
+                  try {
+                    // Use generic create endpoint for now
+                    await anunciosApi.create({
+                      titulo: anuncioForm.titulo,
+                      contenido: anuncioForm.contenido,
+                      global: anuncioForm.destinatario === 'global',
+                      destinatarios: anuncioForm.destinatario !== 'global' ? anuncioForm.destinatario : undefined,
+                    });
+                    setAnuncioStatus('Anuncio enviado con éxito');
+                    setAnuncioForm({ titulo: '', contenido: '', destinatario: 'global' });
+                  } catch (err) {
+                    setAnuncioStatus('Error al enviar el anuncio');
+                  }
+                }}>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium mb-1">Título</label>
+                    <input
+                      type="text"
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
+                      value={anuncioForm.titulo}
+                      onChange={function (e) { setAnuncioForm({ ...anuncioForm, titulo: e.target.value }); }}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium mb-1">Contenido</label>
+                    <textarea
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
+                      value={anuncioForm.contenido}
+                      onChange={function (e) { setAnuncioForm({ ...anuncioForm, contenido: e.target.value }); }}
+                      required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium mb-1">Destinatario</label>
+                    <select
+                      className="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
+                      value={anuncioForm.destinatario}
+                      onChange={function (e) { setAnuncioForm({ ...anuncioForm, destinatario: e.target.value }); }}
+                    >
+                      <option value="global">Todos los usuarios</option>
+                      <option value="estudiantes">Solo estudiantes</option>
+                      <option value="profesores">Solo profesores</option>
+                      {/* Add more subgroups as needed */}
+                    </select>
+                  </div>
+                  <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-white font-medium hover:bg-indigo-700 transition">Enviar anuncio</button>
+                  {anuncioStatus && <p className="mt-2 text-sm text-green-600 dark:text-green-400">{anuncioStatus}</p>}
+                </form>
               </div>
             </div>
           )}

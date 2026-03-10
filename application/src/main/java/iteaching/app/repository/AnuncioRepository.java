@@ -9,4 +9,8 @@ import java.util.List;
 @Repository
 public interface AnuncioRepository extends JpaRepository<Anuncio, Long> {
     List<Anuncio> findByAsignaturaIdOrderByFechaCreacionDesc(Long asignaturaId);
+
+    List<Anuncio> findByAsignaturaIdOrGlobalTrueOrderByFechaCreacionDesc(Long asignaturaId);
+
+    List<Anuncio> findByGlobalTrueOrderByFechaCreacionDesc();
 }

@@ -9,4 +9,10 @@ import java.util.List;
 @Repository
 public interface AsignaturaRepository extends JpaRepository<Asignatura, Long> {
     List<Asignatura> findByNombreContainingIgnoreCase(String nombre);
+
+    /**
+     * Verifica que la asignatura existe Y que el profesor (persona) pertenece a
+     * ella
+     */
+    boolean existsByIdAndProfesoresId(Long asignaturaId, Long profesorId);
 }
