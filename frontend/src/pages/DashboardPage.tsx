@@ -134,68 +134,71 @@ export default function DashboardPage() {
           </div>
 
           {/* Mis Cursos */}
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Cursos</h3>
-            {user && user.role === 'ROLE_ADMIN' && (
-              <Link to="/asignaturas/new" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">+ Nuevo curso</Link>
-            )}
-          </div>
-          {cursos.length === 0 ? (
-            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay cursos disponibles. Crea tu primer curso.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cursos.map(function (c) {
-                return (
-                  <Link key={c.id} to={'/asignaturas/' + c.id} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition overflow-hidden">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
-                      <h4 className="font-bold text-white text-lg">{c.nombre}</h4>
-                      {c.creadorNombre && <p className="text-indigo-100 text-sm">{c.creadorNombre}</p>}
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{c.descripcion || 'Sin descripcion'}</p>
-                      <div className="mt-3 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
-                        <span>{c.estudianteIds ? c.estudianteIds.length : 0} estudiantes</span>
-                        <span className="text-indigo-600 font-medium">Entrar &gt;</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+          {user && user.role !== 'ROLE_ADMIN' && (
+            <>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Cursos</h3>
+              </div>
+              {cursos.length === 0 ? (
+                <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay cursos disponibles.</p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {cursos.map(function (c) {
+                    return (
+                      <Link key={c.id} to={'/asignaturas/' + c.id} className="rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition overflow-hidden">
+                        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
+                          <h4 className="font-bold text-white text-lg">{c.nombre}</h4>
+                          {c.creadorNombre && <p className="text-indigo-100 text-sm">{c.creadorNombre}</p>}
+                        </div>
+                        <div className="p-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{c.descripcion || 'Sin descripcion'}</p>
+                          <div className="mt-3 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                            <span>{c.estudianteIds ? c.estudianteIds.length : 0} estudiantes</span>
+                            <span className="text-indigo-600 font-medium">Entrar &gt;</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
 
           {/* Enhanced sections row */}
           <div className="grid gap-4 lg:grid-cols-2 mt-8">
             {/* Upcoming deadlines */}
-            <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📅 Próximos Plazos</h3>
-                <Link to="/calendario" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Ver calendario</Link>
-              </div>
-              {upcoming.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No hay plazos próximos</p>
-              ) : (
-                <div className="space-y-3">
-                  {upcoming.map(function (item, idx) {
-                    var typeColor = item.tipo === 'EVALUACION' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                    item.tipo === 'SIMULACRO' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-                    return (
-                      <div key={idx} className="flex items-center gap-3">
-                        <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + typeColor}>
-                          {item.tipo}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.titulo}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.asignatura}</p>
-                        </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{item.fecha}</span>
-                      </div>
-                    );
-                  })}
+            {user && user.role !== 'ROLE_ADMIN' && (
+              <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📅 Próximos Plazos</h3>
+                  <Link to="/calendario" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Ver calendario</Link>
                 </div>
-              )}
-            </div>
+                {upcoming.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No hay plazos próximos</p>
+                ) : (
+                  <div className="space-y-3">
+                    {upcoming.map(function (item, idx) {
+                      var typeColor = item.tipo === 'EVALUACION' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                      item.tipo === 'SIMULACRO' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+                      return (
+                        <div key={idx} className="flex items-center gap-3">
+                          <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + typeColor}>
+                            {item.tipo}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.titulo}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.asignatura}</p>
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{item.fecha}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Recent announcements */}
             <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm p-5">
@@ -223,7 +226,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Progress summary */}
-          {progresoList.length > 0 && (
+          {user && user.role !== 'ROLE_ADMIN' && progresoList.length > 0 && (
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📊 Mi Progreso</h3>
