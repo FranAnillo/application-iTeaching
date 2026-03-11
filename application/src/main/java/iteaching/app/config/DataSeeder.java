@@ -1,48 +1,88 @@
 package iteaching.app.config;
 
-import iteaching.app.Models.Logro;
-import iteaching.app.Models.Persona;
-import iteaching.app.Models.Usuarios;
-import iteaching.app.repository.LogroRepository;
-import iteaching.app.repository.UsuarioRepository;
-import iteaching.app.repository.GradoRepository;
-import iteaching.app.Models.Grado;
+import iteaching.app.Models.*;
 import iteaching.app.enums.CursoAcademico;
+import iteaching.app.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
-    private final UsuarioRepository usuarioRepository;
+    private final PersonaRepository personaRepository;
     private final PasswordEncoder passwordEncoder;
     private final LogroRepository logroRepository;
     private final GradoRepository gradoRepository;
+    private final AsignaturaRepository asignaturaRepository;
+    private final AnuncioRepository anuncioRepository;
+    private final MaterialRepository materialRepository;
+    private final CarpetaRepository carpetaRepository;
+    private final TareaRepository tareaRepository;
+    private final EntregaRepository entregaRepository;
+    private final ForoTemaRepository foroTemaRepository;
+    private final ForoRespuestaRepository foroRespuestaRepository;
+    private final GrupoRepository grupoRepository;
+    private final ClaseRepository claseRepository;
 
-    public DataSeeder(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
-                      LogroRepository logroRepository, GradoRepository gradoRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public DataSeeder(PersonaRepository personaRepository, PasswordEncoder passwordEncoder,
+                      LogroRepository logroRepository, GradoRepository gradoRepository,
+                      AsignaturaRepository asignaturaRepository, AnuncioRepository anuncioRepository,
+                      MaterialRepository materialRepository, CarpetaRepository carpetaRepository,
+                      TareaRepository tareaRepository, EntregaRepository entregaRepository,
+                      ForoTemaRepository foroTemaRepository, ForoRespuestaRepository foroRespuestaRepository,
+                      GrupoRepository grupoRepository, ClaseRepository claseRepository) {
+        this.personaRepository = personaRepository;
         this.passwordEncoder = passwordEncoder;
         this.logroRepository = logroRepository;
         this.gradoRepository = gradoRepository;
+        this.asignaturaRepository = asignaturaRepository;
+        this.anuncioRepository = anuncioRepository;
+        this.materialRepository = materialRepository;
+        this.carpetaRepository = carpetaRepository;
+        this.tareaRepository = tareaRepository;
+        this.entregaRepository = entregaRepository;
+        this.foroTemaRepository = foroTemaRepository;
+        this.foroRespuestaRepository = foroRespuestaRepository;
+        this.grupoRepository = grupoRepository;
+        this.claseRepository = claseRepository;
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
-        createAdminIfNotExists();
-        createProfesorIfNotExists();
-        createEstudianteIfNotExists();
-        seedGrados();
+        Persona admin = createAdminIfNotExists();
+        Persona profesor = createProfesorIfNotExists();
+        Persona estudiante = createEstudianteIfNotExists();
+        
         seedLogros();
+        
+        if (gradoRepository.count() == 0) {
+            Grado ingenieria = crearGrado("Ingeniería Informática", CursoAcademico._2025_2026);
+            Grado mates = crearGrado("Matemáticas", CursoAcademico._2025_2026);
+            crearGrado("Historia", CursoAcademico._2025_2026);
+
+            if (asignaturaRepository.count() == 0) {
+                Asignatura asig1 = crearAsignatura("Programación Avanzada", "PROG", "Curso sobre Java, Spring Boot y patrones de diseño.", ingenieria, profesor, estudiante, admin);
+                crearAsignatura("Arquitectura de Software", "ARQ", "Diseño de sistemas escalables y microservicios.", ingenieria, profesor, estudiante, admin);
+                crearAsignatura("Cálculo I", "CAL1", "Límites, derivadas e integrales.", mates, profesor, estudiante, admin);
+
+                seedAsignaturaContent(asig1, profesor, estudiante);
+            }
+        }
     }
 
-    private void createAdminIfNotExists() {
-        if (usuarioRepository.findByUsername("admin").isEmpty()) {
+    private Persona createAdminIfNotExists() {
+        return personaRepository.findByUsername("admin").orElseGet(() -> {
             Persona admin = new Persona();
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("Admin1234"));
@@ -52,15 +92,13 @@ public class DataSeeder implements CommandLineRunner {
             admin.setTelefono("000000000");
             admin.setEnabled(true);
             admin.setRole(Usuarios.Role.ROLE_ADMIN);
-            usuarioRepository.save(admin);
             log.info("Cuenta de administrador creada: admin / Admin1234");
-        } else {
-            log.info("Cuenta de administrador ya existe");
-        }
+            return personaRepository.save(admin);
+        });
     }
 
-    private void createEstudianteIfNotExists() {
-        if (usuarioRepository.findByUsername("estudiante").isEmpty()) {
+    private Persona createEstudianteIfNotExists() {
+        return personaRepository.findByUsername("estudiante").orElseGet(() -> {
             Persona estudiante = new Persona();
             estudiante.setUsername("estudiante");
             estudiante.setPassword(passwordEncoder.encode("Estud123!"));
@@ -70,15 +108,13 @@ public class DataSeeder implements CommandLineRunner {
             estudiante.setTelefono("000000001");
             estudiante.setEnabled(true);
             estudiante.setRole(Usuarios.Role.ROLE_ESTUDIANTE);
-            usuarioRepository.save(estudiante);
             log.info("Cuenta de estudiante creada: estudiante / Estud123!");
-        } else {
-            log.info("Cuenta de estudiante ya existe");
-        }
+            return personaRepository.save(estudiante);
+        });
     }
 
-    private void createProfesorIfNotExists() {
-        if (usuarioRepository.findByUsername("profesor").isEmpty()) {
+    private Persona createProfesorIfNotExists() {
+        return personaRepository.findByUsername("profesor").orElseGet(() -> {
             Persona profesor = new Persona();
             profesor.setUsername("profesor");
             profesor.setPassword(passwordEncoder.encode("Profe123!"));
@@ -88,27 +124,147 @@ public class DataSeeder implements CommandLineRunner {
             profesor.setTelefono("000000002");
             profesor.setEnabled(true);
             profesor.setRole(Usuarios.Role.ROLE_PROFESOR);
-            usuarioRepository.save(profesor);
             log.info("Cuenta de profesor creada: profesor / Profe123!");
-        } else {
-            log.info("Cuenta de profesor ya existe");
-        }
+            return personaRepository.save(profesor);
+        });
     }
 
-    private void seedGrados() {
-        if (gradoRepository.count() == 0) {
-            crearGrado("Ingenieria", CursoAcademico._2025_2026);
-            crearGrado("Matematicas", CursoAcademico._2025_2026);
-            crearGrado("Historia", CursoAcademico._2025_2026);
-            log.info("Grados iniciales creados");
-        }
-    }
-
-    private void crearGrado(String nombre, CursoAcademico curso) {
+    private Grado crearGrado(String nombre, CursoAcademico curso) {
         Grado g = new Grado();
         g.setNombre(nombre);
         g.setCursoAcademico(curso);
-        gradoRepository.save(g);
+        return gradoRepository.save(g);
+    }
+
+    private Asignatura crearAsignatura(String nombre, String siglas, String desc, Grado grado, Persona profesor, Persona estudiante, Persona admin) {
+        Asignatura a = new Asignatura();
+        a.setNombre(nombre);
+        a.setSiglas(siglas);
+        a.setDescripcion(desc);
+        a.setGrado(grado);
+        a.setCreador(admin);
+        a.setProfesores(new ArrayList<>(List.of(profesor)));
+        a.setEstudiantes(new ArrayList<>(List.of(estudiante)));
+        return asignaturaRepository.save(a);
+    }
+
+    private void seedAsignaturaContent(Asignatura asig, Persona profesor, Persona estudiante) {
+        // Anuncios
+        crearAnuncio("¡Bienvenidos al curso!", "Espero que disfrutéis aprendiendo Java y Spring.", true, asig, profesor);
+        crearAnuncio("Próxima tutoría", "El lunes a las 10:00 habrá tutoría online.", false, asig, profesor);
+
+        // Carpetas y Materiales
+        Carpeta c1 = crearCarpeta("Semana 1: Introducción", asig);
+        crearMaterial("Transparencias Tema 1", "PDF con la teoría inicial.", "http://example.com/tema1.pdf", Material.TipoMaterial.DOCUMENTO, asig, c1, profesor);
+        
+        Carpeta c2 = crearCarpeta("Recursos Adicionales", asig);
+        crearMaterial("Repositorio GitHub", "Código fuente de los ejemplos.", "https://github.com/iteaching/demo", Material.TipoMaterial.ENLACE, asig, c2, profesor);
+
+        // Tareas y Entregas
+        Tarea t1 = crearTarea("Entrega Inicial", "Sube un documento con tu propuesta de proyecto.", LocalDateTime.now().plusDays(7), asig, profesor, Tarea.TipoTarea.TAREA);
+        crearEntrega("Aquí está mi propuesta. He incluido un diagrama de clases.", null, LocalDateTime.now().plusHours(2), t1, estudiante);
+
+        crearTarea("Examen Parcial", "Examen teórico sobre los temas 1-3.", LocalDateTime.now().plusDays(15), asig, profesor, Tarea.TipoTarea.EVALUACION);
+
+        // Foro
+        ForoTema tema = crearForoTema("Duda con la inyección de dependencias", "¿Qué diferencia hay entre @Autowired y el constructor?", asig, estudiante);
+        crearForoRespuesta("Es mejor usar el constructor porque facilita los tests unitarios.", tema, profesor);
+
+        // Grupos
+        crearGrupo("Grupo de Prácticas A", Grupo.TipoGrupo.PRACTICA, true, asig);
+        crearGrupo("Grupo de Teoría 1", Grupo.TipoGrupo.TEORIA, false, asig);
+
+        // Clases / Horario (Usando String para las horas según el modelo Clase)
+        crearClase("2026-03-16T09:00:00", "2026-03-16T11:00:00", asig, profesor, estudiante);
+        crearClase("2026-03-18T11:30:00", "2026-03-18T13:30:00", asig, profesor, estudiante);
+    }
+
+    private void crearAnuncio(String titulo, String cont, boolean imp, Asignatura asig, Persona autor) {
+        Anuncio a = new Anuncio();
+        a.setTitulo(titulo);
+        a.setContenido(cont);
+        a.setImportante(imp);
+        a.setAsignatura(asig);
+        a.setAutor(autor);
+        anuncioRepository.save(a);
+    }
+
+    private Carpeta crearCarpeta(String nombre, Asignatura asig) {
+        Carpeta c = new Carpeta();
+        c.setNombre(nombre);
+        c.setAsignatura(asig);
+        return carpetaRepository.save(c);
+    }
+
+    private void crearMaterial(String titulo, String desc, String url, Material.TipoMaterial tipo, Asignatura asig, Carpeta carp, Persona autor) {
+        Material m = new Material();
+        m.setTitulo(titulo);
+        m.setDescripcion(desc);
+        m.setUrlRecurso(url);
+        m.setTipo(tipo);
+        m.setAsignatura(asig);
+        m.setCarpeta(carp);
+        m.setAutor(autor);
+        m.setFechaCreacion(LocalDateTime.now());
+        materialRepository.save(m);
+    }
+
+    private Tarea crearTarea(String tit, String desc, LocalDateTime entrega, Asignatura asig, Persona creador, Tarea.TipoTarea tipo) {
+        Tarea t = new Tarea();
+        t.setTitulo(tit);
+        t.setDescripcion(desc);
+        t.setFechaEntrega(entrega);
+        t.setAsignatura(asig);
+        t.setCreador(creador);
+        t.setTipoTarea(tipo);
+        return tareaRepository.save(t);
+    }
+
+    private void crearEntrega(String cont, String url, LocalDateTime fecha, Tarea tarea, Persona estudiante) {
+        Entrega e = new Entrega();
+        e.setContenido(cont);
+        e.setUrlAdjunto(url);
+        e.setFechaEntrega(fecha);
+        e.setTarea(tarea);
+        e.setEstudiante(estudiante);
+        entregaRepository.save(e);
+    }
+
+    private ForoTema crearForoTema(String tit, String cont, Asignatura asig, Persona autor) {
+        ForoTema f = new ForoTema();
+        f.setTitulo(tit);
+        f.setContenido(cont);
+        f.setAsignatura(asig);
+        f.setAutor(autor);
+        return foroTemaRepository.save(f);
+    }
+
+    private void crearForoRespuesta(String cont, ForoTema tema, Persona autor) {
+        ForoRespuesta r = new ForoRespuesta();
+        r.setContenido(cont);
+        r.setTema(tema);
+        r.setAutor(autor);
+        foroRespuestaRepository.save(r);
+    }
+
+    private void crearGrupo(String nom, Grupo.TipoGrupo tipo, boolean inscr, Asignatura asig) {
+        Grupo g = new Grupo();
+        g.setNombre(nom);
+        g.setTipo(tipo);
+        g.setInscribible(inscr);
+        g.setAsignatura(asig);
+        grupoRepository.save(g);
+    }
+
+    private void crearClase(String inicio, String fin, Asignatura asig, Persona prof, Persona alum) {
+        Clase c = new Clase();
+        c.setHoraComienzo(inicio);
+        c.setHoraFin(fin);
+        c.setAsignatura(asig);
+        c.setProfesor(prof);
+        c.setAlumno(alum);
+        c.setEstadoClase(EstadoClase.ACEPTADA);
+        claseRepository.save(c);
     }
 
     private void seedLogros() {
@@ -138,3 +294,4 @@ public class DataSeeder implements CommandLineRunner {
         logroRepository.save(logro);
     }
 }
+

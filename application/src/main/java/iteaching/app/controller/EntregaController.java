@@ -34,7 +34,7 @@ public class EntregaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ESTUDIANTE')")
+    @PreAuthorize("hasAuthority('ROLE_ESTUDIANTE')")
     public ResponseEntity<EntregaDTO> submit(@Valid @RequestBody EntregaDTO dto, Authentication auth) {
         return ResponseEntity.ok(entregaService.submit(dto, auth.getName()));
     }

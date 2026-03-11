@@ -58,6 +58,8 @@ export interface Asignatura {
   creadorNombre?: string;
   profesorIds: number[];
   estudianteIds: number[];
+  gradoId: number;
+  gradoNombre?: string;
 }
 
 export interface Clase {
@@ -273,11 +275,11 @@ export interface Rubrica {
 }
 
 export interface CriterioRubrica {
-  id: number;
+  id?: number;
   nombre: string;
   descripcion: string;
   puntuacionMaxima: number;
-  orden: number;
+  orden?: number;
   nivelExcelente: string;
   nivelBueno: string;
   nivelSuficiente: string;

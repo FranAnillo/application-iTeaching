@@ -56,7 +56,9 @@ public class SecurityConfig {
                 .cacheControl(cache -> {}) // Cache-Control: no-cache, no-store
             )
             .authorizeHttpRequests(auth -> {
-                auth.requestMatchers("/api/auth/**").permitAll();
+                auth.requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/uploads/**").permitAll()
+                    .requestMatchers("/error").permitAll();
                 if (isLocalProfile) {
                     auth.requestMatchers("/h2-console/**").permitAll();
                 }

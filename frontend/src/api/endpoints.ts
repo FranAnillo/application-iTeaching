@@ -241,3 +241,15 @@ export var logrosApi = {
   getMisLogros: function () { return api.get<Logro[]>('/logros/mis-logros'); },
   crear: function (data: Partial<Logro>) { return api.post<Logro>('/logros', data); },
 };
+
+// ===== Archivos =====
+export const archivosApi = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<{ url: string }>('/files/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+

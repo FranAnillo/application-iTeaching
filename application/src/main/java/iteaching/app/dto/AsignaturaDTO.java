@@ -27,4 +27,6 @@ public class AsignaturaDTO {
     @NotBlank
     @Size(max = 20)
     private String siglas;
+    private Long gradoId;
+    private String gradoNombre;
 }

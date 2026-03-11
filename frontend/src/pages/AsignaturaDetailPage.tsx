@@ -16,8 +16,10 @@ import {
   asistenciaApi,
   progresoApi,
   rubricasApi,
+  gradosApi,
+  archivosApi,
 } from '../api/endpoints';
-import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase, AsistenciaRecord, Progreso, Rubrica, CriterioRubrica } from '../types';
+import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase, AsistenciaRecord, Progreso, Rubrica, CriterioRubrica, Grado } from '../types';
 
 type Tab = 'info' | 'anuncios' | 'materiales' | 'horarios' | 'tareas' | 'evaluaciones' | 'simulacros' | 'foro' | 'grupos' | 'calificaciones' | 'asistencia' | 'progreso' | 'rubricas';
 
@@ -26,7 +28,7 @@ var ALL_TABS: { key: Tab; label: string; icon: string; roles: string[] | null }[
   { key: 'anuncios', label: 'Anuncios', icon: '!', roles: null },
   { key: 'materiales', label: 'Materiales', icon: '#', roles: null },
   { key: 'horarios', label: 'Horarios', icon: 'H', roles: null },
-  { key: 'tareas', label: 'Tareas', icon: 'T', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
+  { key: 'tareas', label: 'Tareas', icon: 'T', roles: null },
   { key: 'evaluaciones', label: 'Evaluaciones', icon: 'E', roles: null },
   { key: 'simulacros', label: 'Simulacros', icon: 'S', roles: null },
   { key: 'foro', label: 'Foro', icon: 'F', roles: null },
@@ -61,9 +63,13 @@ export default function AsignaturaDetailPage() {
   var error = errorState[0];
   var setError = errorState[1];
 
-  var formState = useState<Partial<Asignatura>>({ nombre: '', descripcion: '', url: '' });
+  var formState = useState<Partial<Asignatura>>({ nombre: '', descripcion: '', url: '', siglas: '', gradoId: 0 });
   var form = formState[0];
   var setForm = formState[1];
+
+  var gradosListState = useState<Grado[]>([]);
+  var gradosList = gradosListState[0];
+  var setGradosList = gradosListState[1];
 
   var savingState = useState(false);
   var saving = savingState[0];
@@ -115,6 +121,9 @@ export default function AsignaturaDetailPage() {
   var showEntregaFormState = useState(false);
   var showEntregaForm = showEntregaFormState[0];
   var setShowEntregaForm = showEntregaFormState[1];
+  var selectedFileState = useState<File | null>(null);
+  var selectedFile = selectedFileState[0];
+  var setSelectedFile = selectedFileState[1];
 
   // Foro
   var temasState = useState<ForoTema[]>([]);
@@ -163,7 +172,7 @@ export default function AsignaturaDetailPage() {
   var showGrupoFormState = useState(false);
   var showGrupoForm = showGrupoFormState[0];
   var setShowGrupoForm = showGrupoFormState[1];
-  var grupoFormState = useState({ nombre: '', tipo: 'TEORIA' });
+  var grupoFormState = useState({ nombre: '', tipo: 'TEORIA', inscribible: true });
   var grupoForm = grupoFormState[0];
   var setGrupoForm = grupoFormState[1];
 
@@ -208,7 +217,7 @@ export default function AsignaturaDetailPage() {
   var showRubricaFormState = useState(false);
   var showRubricaForm = showRubricaFormState[0];
   var setShowRubricaForm = showRubricaFormState[1];
-  var rubricaFormState = useState({ nombre: '', descripcion: '', tareaId: 0, criterios: [] as { nombre: string; descripcion: string; puntuacionMaxima: number; nivelExcelente: string; nivelBueno: string; nivelSuficiente: string; nivelInsuficiente: string }[] });
+  var rubricaFormState = useState({ nombre: '', descripcion: '', tareaId: 0, criterios: [] as CriterioRubrica[] });
   var rubricaForm = rubricaFormState[0];
   var setRubricaForm = rubricaFormState[1];
 
@@ -232,6 +241,13 @@ export default function AsignaturaDetailPage() {
     }
     // Fetch current user ID (for grupo membership checks)
     usuariosApi.me().then(function (r) { setMeId(r.data.id); }).catch(function () {});
+    // Fetch degrees for the dropdown
+    gradosApi.getAll().then(function (r) { 
+      setGradosList(r.data); 
+      if (isNew && r.data.length > 0) {
+        update('gradoId', r.data[0].id);
+      }
+    }).catch(function () {});
   }, [id, isNew]);
 
   // Load tab data when switching
@@ -308,7 +324,7 @@ export default function AsignaturaDetailPage() {
 
   function handleCreateRubrica(e: FormEvent) {
     e.preventDefault();
-    rubricasApi.create(Object.assign({}, rubricaForm, { criterios: rubricaForm.criterios.map(function (c, i) { return Object.assign({}, c, { orden: i + 1 }); }) }))
+    rubricasApi.crear(Object.assign({}, rubricaForm, { criterios: rubricaForm.criterios.map(function (c, i) { return Object.assign({}, c, { orden: i + 1 }); }) }))
       .then(function () { setShowRubricaForm(false); setRubricaForm({ nombre: '', descripcion: '', tareaId: 0, criterios: [] }); loadRubricas(Number(id)); });
   }
 
@@ -353,9 +369,25 @@ export default function AsignaturaDetailPage() {
 
   function handleSubmitEntrega(e: FormEvent) {
     e.preventDefault();
-    if (!selectedTarea) return;
-    entregasApi.submit(Object.assign({}, entregaForm, { tareaId: selectedTarea.id }))
-      .then(function () { setShowEntregaForm(false); setEntregaForm({ contenido: '', urlAdjunto: '' }); if (selectedTarea) handleSelectTarea(selectedTarea); });
+    var currentTarea = selectedTarea;
+    if (!currentTarea) return;
+
+    var promise = selectedFile 
+      ? archivosApi.upload(selectedFile).then(function(res) { return res.data.url; })
+      : Promise.resolve(entregaForm.urlAdjunto);
+
+    promise.then(function(finalUrl) {
+      if (!currentTarea) return;
+      entregasApi.submit(Object.assign({}, entregaForm, { tareaId: currentTarea.id, urlAdjunto: finalUrl }))
+        .then(function () { 
+          setShowEntregaForm(false); 
+          setEntregaForm({ contenido: '', urlAdjunto: '' }); 
+          setSelectedFile(null);
+          handleSelectTarea(currentTarea as Tarea); 
+        });
+    }).catch(function() {
+      alert('Error al subir el archivo o enviar la entrega');
+    });
   }
 
   function handleCalificar(entregaId: number) {
@@ -386,7 +418,7 @@ export default function AsignaturaDetailPage() {
   function handleCreateGrupo(e: FormEvent) {
     e.preventDefault();
     gruposApi.create(Object.assign({}, grupoForm, { asignaturaId: Number(id) }))
-      .then(function () { setShowGrupoForm(false); setGrupoForm({ nombre: '', tipo: 'TEORIA' }); loadGrupos(); });
+      .then(function () { setShowGrupoForm(false); setGrupoForm({ nombre: '', tipo: 'TEORIA', inscribible: true }); loadGrupos(); });
   }
 
   function handleCreateCarpeta(e: FormEvent) {
@@ -443,6 +475,20 @@ export default function AsignaturaDetailPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">URL</label>
             <input type="url" value={form.url || ''} onChange={function (e) { update('url', e.target.value); }} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Grado</label>
+            <select 
+              value={form.gradoId || ''} 
+              onChange={function (e) { update('gradoId', Number(e.target.value)); }} 
+              required 
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecciona un grado</option>
+              {gradosList.map(function (g) {
+                return <option key={g.id} value={g.id}>{g.nombre} ({g.cursoAcademico})</option>;
+              })}
+            </select>
           </div>
           <div className="flex gap-3 pt-4">
             <button type="submit" disabled={saving} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition">{saving ? 'Guardando...' : 'Crear curso'}</button>
@@ -655,6 +701,7 @@ export default function AsignaturaDetailPage() {
             <h3 className="text-lg font-semibold text-gray-900">Horarios de clase</h3>
             <button
               onClick={function () {
+                var numId = Number(id);
                 var endpoint = canManageContent
                   ? clasesApi.descargarHorarioCompletoPdf(numId)
                   : clasesApi.descargarHorarioPdf(numId);
@@ -791,14 +838,27 @@ export default function AsignaturaDetailPage() {
 
           <div className="mb-4 flex items-center justify-between">
             <h4 className="font-semibold text-gray-900">Entregas ({entregas.length})</h4>
-            <button onClick={function () { setShowEntregaForm(!showEntregaForm); }} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">{showEntregaForm ? 'Cancelar' : 'Enviar entrega'}</button>
+            {isEstudiante && (
+              <button onClick={function () { setShowEntregaForm(!showEntregaForm); }} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">
+                {showEntregaForm ? 'Cancelar' : 'Enviar entrega'}
+              </button>
+            )}
           </div>
 
           {showEntregaForm && (
             <form onSubmit={handleSubmitEntrega} className="mb-4 space-y-3 rounded-xl bg-white p-5 shadow-sm">
               <textarea value={entregaForm.contenido} onChange={function (e) { setEntregaForm(Object.assign({}, entregaForm, { contenido: e.target.value })); }} placeholder="Tu respuesta..." rows={4} required className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-gray-500">Archivo adjunto</label>
+                <input 
+                  type="file" 
+                  onChange={function(e) { if(e.target.files) setSelectedFile(e.target.files[0]); }} 
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                />
+              </div>
+              <div className="text-xs text-gray-400 text-center">O bien, indica una URL:</div>
               <input type="text" value={entregaForm.urlAdjunto} onChange={function (e) { setEntregaForm(Object.assign({}, entregaForm, { urlAdjunto: e.target.value })); }} placeholder="URL adjunto (opcional)" className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-              <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">Enviar</button>
+              <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">Enviar entrega</button>
             </form>
           )}
 
@@ -815,9 +875,15 @@ export default function AsignaturaDetailPage() {
                         <p className="text-xs text-gray-400">{new Date(en.fechaEntrega).toLocaleString('es-ES')}</p>
                       </div>
                       {en.calificacion !== null ? (
-                        <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-800">{en.calificacion}/{selectedTarea.puntuacionMaxima}</span>
+                        <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-800">
+                          {en.calificacion}/{selectedTarea.puntuacionMaxima}
+                        </span>
                       ) : (
-                        <button onClick={function () { handleCalificar(en.id); }} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100">Calificar</button>
+                        canManageContent && (
+                          <button onClick={function () { handleCalificar(en.id); }} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100">
+                            Calificar
+                          </button>
+                        )
                       )}
                     </div>
                     <p className="mt-2 text-sm text-gray-600 whitespace-pre-wrap">{en.contenido}</p>
@@ -1110,6 +1176,17 @@ export default function AsignaturaDetailPage() {
                 <option value="TEORIA">Teoria</option>
                 <option value="PRACTICA">Practica</option>
               </select>
+
+              <div className="flex items-center gap-2 px-1">
+                <input 
+                  type="checkbox" 
+                  id="inscribible-check" 
+                  checked={grupoForm.inscribible} 
+                  onChange={function(e) { setGrupoForm(Object.assign({}, grupoForm, { inscribible: e.target.checked })); }} 
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <label htmlFor="inscribible-check" className="text-sm text-gray-700">Libre acceso (estudiantes pueden apuntarse solos)</label>
+              </div>
               <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">Crear grupo</button>
             </form>
           )}
@@ -1125,13 +1202,13 @@ export default function AsignaturaDetailPage() {
                       <div>
                         <h4 className="font-semibold text-gray-900">{g.nombre}</h4>
                         <span className={'mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ' + (g.tipo === 'TEORIA' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')}>{g.tipo === 'TEORIA' ? 'Teoria' : 'Practica'}</span>
-                        {g.inscribible && <span className="ml-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Inscripciones abiertas</span>}
-                        {!g.inscribible && <span className="ml-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Inscripciones cerradas</span>}
+                        {g.inscribible && <span className="ml-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Libre acceso</span>}
+                        {!g.inscribible && <span className="ml-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Restringido</span>}
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         {canManageContent && (
                           <button onClick={function () { gruposApi.toggleInscribible(g.id).then(loadGrupos); }} className={'rounded px-2 py-1 text-xs transition ' + (g.inscribible ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100')}>
-                            {g.inscribible ? 'Cerrar inscripcion' : 'Abrir inscripcion'}
+                            {g.inscribible ? 'Cambiar a Restringido' : 'Cambiar a Libre acceso'}
                           </button>
                         )}
                         {canManageContent && <button onClick={function () { gruposApi.delete(g.id).then(loadGrupos); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
@@ -1151,7 +1228,7 @@ export default function AsignaturaDetailPage() {
                       </div>
                     )}
                     {isEstudiante && !g.inscribible && !isMember && (
-                      <p className="mt-2 text-xs text-gray-400 italic">El profesor no ha habilitado inscripciones para este grupo</p>
+                      <p className="mt-2 text-xs text-gray-400 italic">Acceso restringido: solo un profesor puede asignarte a este grupo</p>
                     )}
                   </div>
                 );
@@ -1506,7 +1583,7 @@ export default function AsignaturaDetailPage() {
                         {r.tareaTitulo && <p className="text-xs text-indigo-500 mt-0.5">Tarea: {r.tareaTitulo}</p>}
                         {r.descripcion && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{r.descripcion}</p>}
                       </div>
-                      {canManageContent && <button onClick={function () { rubricasApi.delete(r.id).then(function () { loadRubricas(Number(id)); }); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
+                      {canManageContent && <button onClick={function () { if (confirm('¿Eliminar rubrica?')) rubricasApi.eliminar(r.id).then(function () { loadRubricas(Number(id)); }); }} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>}
                     </div>
                     {r.criterios && r.criterios.length > 0 && (
                       <div className="overflow-x-auto">
