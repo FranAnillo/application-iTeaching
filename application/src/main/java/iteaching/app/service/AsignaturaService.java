@@ -61,6 +61,7 @@ public class AsignaturaService {
         a.setNombre(InputSanitizer.sanitize(dto.getNombre()));
         a.setSiglas(InputSanitizer.sanitize(dto.getSiglas()));
         a.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        a.setAula(InputSanitizer.sanitize(dto.getAula()));
         a.setUrl(InputSanitizer.sanitizeUrl(dto.getUrl()));
         a.setCreador(creador);
         a.setGrado(grado);
@@ -74,6 +75,7 @@ public class AsignaturaService {
         a.setNombre(InputSanitizer.sanitize(dto.getNombre()));
         a.setSiglas(InputSanitizer.sanitize(dto.getSiglas()));
         a.setDescripcion(InputSanitizer.sanitize(dto.getDescripcion()));
+        a.setAula(InputSanitizer.sanitize(dto.getAula()));
         a.setUrl(InputSanitizer.sanitizeUrl(dto.getUrl()));
         
         if (dto.getGradoId() != null) {
@@ -215,6 +217,7 @@ public class AsignaturaService {
         dto.setNombre(a.getNombre());
         dto.setSiglas(a.getSiglas());
         dto.setDescripcion(a.getDescripcion());
+        dto.setAula(a.getAula());
         dto.setUrl(a.getUrl());
         dto.setCreadorId(a.getCreador() != null ? a.getCreador().getId() : null);
         dto.setCreadorNombre(a.getCreador() != null ? a.getCreador().getNombreCompleto() : null);

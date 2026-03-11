@@ -20,6 +20,7 @@ public class AsignaturaDTO {
     private String descripcion;
     @Size(max = 2048)
     private String url;
+    private String aula;
     private Long creadorId;
     private String creadorNombre;
     private Set<Long> profesorIds;

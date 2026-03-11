@@ -56,6 +56,11 @@ public class ClaseController {
         return ResponseEntity.ok(claseService.findByEstado(estado));
     }
 
+    @GetMapping("/asignatura/{asignaturaId}")
+    public ResponseEntity<List<ClaseDTO>> findByAsignatura(@PathVariable Long asignaturaId) {
+        return ResponseEntity.ok(claseService.findByAsignatura(asignaturaId));
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN','PROFESOR')")
     @PostMapping
     public ResponseEntity<ClaseDTO> create(@Valid @RequestBody ClaseCreateRequest request) {

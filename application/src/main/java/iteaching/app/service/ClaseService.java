@@ -1,14 +1,10 @@
 package iteaching.app.service;
 
-import iteaching.app.Models.Asignatura;
-import iteaching.app.Models.Clase;
-import iteaching.app.Models.EstadoClase;
-import iteaching.app.Models.Persona;
-import iteaching.app.dto.ClaseCreateRequest;
-import iteaching.app.dto.ClaseDTO;
-import iteaching.app.repository.AsignaturaRepository;
-import iteaching.app.repository.ClaseRepository;
-import iteaching.app.repository.PersonaRepository;
+import iteaching.app.repository.*;
+import iteaching.app.Models.*;
+import iteaching.app.dto.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +17,14 @@ public class ClaseService {
     private final ClaseRepository claseRepository;
     private final PersonaRepository personaRepository;
     private final AsignaturaRepository asignaturaRepository;
+    private final GrupoRepository grupoRepository;
 
     public ClaseService(ClaseRepository claseRepository, PersonaRepository personaRepository,
-                        AsignaturaRepository asignaturaRepository) {
+                        AsignaturaRepository asignaturaRepository, GrupoRepository grupoRepository) {
         this.claseRepository = claseRepository;
         this.personaRepository = personaRepository;
         this.asignaturaRepository = asignaturaRepository;
+        this.grupoRepository = grupoRepository;
     }
 
     public List<ClaseDTO> findAll() {
@@ -51,24 +49,36 @@ public class ClaseService {
         return claseRepository.findByEstadoClase(estado).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    public List<ClaseDTO> findByAsignatura(Long asignaturaId) {
+        return claseRepository.findByAsignaturaId(asignaturaId).stream()
+                .map(this::toDTO).collect(Collectors.toList());
+    }
+
     @Transactional
     public ClaseDTO create(ClaseCreateRequest request) {
-        Persona alumno = personaRepository.findById(request.getAlumnoId())
-                .orElseThrow(() -> new RuntimeException("Alumno no encontrado"));
+        Persona alumno = request.getAlumnoId() != null 
+                ? personaRepository.findById(request.getAlumnoId()).orElse(null)
+                : null;
         Persona profesor = personaRepository.findById(request.getProfesorId())
                 .orElseThrow(() -> new RuntimeException("Profesor no encontrado"));
         Asignatura asignatura = asignaturaRepository.findById(request.getAsignaturaId())
                 .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
+        Grupo grupo = (request.getGrupoId() != null)
+                ? grupoRepository.findById(request.getGrupoId()).orElse(null)
+                : null;
 
         Clase clase = new Clase();
-        clase.setHoraComienzo(request.getHoraComienzo());
-        clase.setHoraFin(request.getHoraFin());
+        clase.setTitulo(request.getTitulo() != null ? request.getTitulo() : "Sesion de " + asignatura.getNombre());
+        clase.setAula(request.getAula());
+        clase.setHoraComienzo(LocalDateTime.parse(request.getHoraComienzo()));
+        clase.setHoraFin(LocalDateTime.parse(request.getHoraFin()));
         clase.setAlumno(alumno);
         clase.setProfesor(profesor);
         clase.setAsignatura(asignatura);
+        clase.setGrupo(grupo);
         clase.setAceptacionAlumno(true);
-        clase.setAceptacionProfesor(false);
-        clase.setEstadoClase(EstadoClase.SOLICITADA);
+        clase.setAceptacionProfesor(true); // Default to true if created by prof/admin
+        clase.setEstadoClase(EstadoClase.ACEPTADA);
 
         return toDTO(claseRepository.save(clase));
     }
@@ -98,8 +108,10 @@ public class ClaseService {
     private ClaseDTO toDTO(Clase c) {
         ClaseDTO dto = new ClaseDTO();
         dto.setId(c.getId());
-        dto.setHoraComienzo(c.getHoraComienzo());
-        dto.setHoraFin(c.getHoraFin());
+        dto.setTitulo(c.getTitulo());
+        dto.setAula(c.getAula());
+        dto.setHoraComienzo(c.getHoraComienzo() != null ? c.getHoraComienzo().toString() : null);
+        dto.setHoraFin(c.getHoraFin() != null ? c.getHoraFin().toString() : null);
         dto.setAceptacionAlumno(c.getAceptacionAlumno());
         dto.setAceptacionProfesor(c.getAceptacionProfesor());
         dto.setEstadoClase(c.getEstadoClase() != null ? c.getEstadoClase().name() : null);
@@ -114,6 +126,10 @@ public class ClaseService {
         if (c.getAsignatura() != null) {
             dto.setAsignaturaId(c.getAsignatura().getId());
             dto.setAsignaturaNombre(c.getAsignatura().getNombre());
+        }
+        if (c.getGrupo() != null) {
+            dto.setGrupoId(c.getGrupo().getId());
+            dto.setGrupoNombre(c.getGrupo().getNombre());
         }
         return dto;
     }

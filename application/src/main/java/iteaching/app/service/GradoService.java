@@ -30,6 +30,7 @@ public class GradoService {
         Grado g = new Grado();
         g.setNombre(dto.getNombre());
         g.setCursoAcademico(dto.getCursoAcademico());
+        g.setCentroImparticion(dto.getCentroImparticion());
         Grado saved = gradoRepository.save(g);
         return toDTO(saved);
     }
@@ -50,6 +51,7 @@ public class GradoService {
         dto.setId(g.getId());
         dto.setNombre(g.getNombre());
         dto.setCursoAcademico(g.getCursoAcademico());
+        dto.setCentroImparticion(g.getCentroImparticion());
         return dto;
     }
 

@@ -32,6 +32,7 @@ public class DataSeeder implements CommandLineRunner {
     private final ForoTemaRepository foroTemaRepository;
     private final ForoRespuestaRepository foroRespuestaRepository;
     private final GrupoRepository grupoRepository;
+    private final HorarioRecurrenteRepository horarioRepository;
     private final ClaseRepository claseRepository;
 
     public DataSeeder(PersonaRepository personaRepository, PasswordEncoder passwordEncoder,
@@ -40,7 +41,8 @@ public class DataSeeder implements CommandLineRunner {
                       MaterialRepository materialRepository, CarpetaRepository carpetaRepository,
                       TareaRepository tareaRepository, EntregaRepository entregaRepository,
                       ForoTemaRepository foroTemaRepository, ForoRespuestaRepository foroRespuestaRepository,
-                      GrupoRepository grupoRepository, ClaseRepository claseRepository) {
+                      GrupoRepository grupoRepository, HorarioRecurrenteRepository horarioRepository,
+                      ClaseRepository claseRepository) {
         this.personaRepository = personaRepository;
         this.passwordEncoder = passwordEncoder;
         this.logroRepository = logroRepository;
@@ -54,6 +56,7 @@ public class DataSeeder implements CommandLineRunner {
         this.foroTemaRepository = foroTemaRepository;
         this.foroRespuestaRepository = foroRespuestaRepository;
         this.grupoRepository = grupoRepository;
+        this.horarioRepository = horarioRepository;
         this.claseRepository = claseRepository;
     }
 
@@ -67,14 +70,14 @@ public class DataSeeder implements CommandLineRunner {
         seedLogros();
         
         if (gradoRepository.count() == 0) {
-            Grado ingenieria = crearGrado("Ingeniería Informática", CursoAcademico._2025_2026);
-            Grado mates = crearGrado("Matemáticas", CursoAcademico._2025_2026);
-            crearGrado("Historia", CursoAcademico._2025_2026);
+            Grado ingenieria = crearGrado("Ingeniería Informática", CursoAcademico._2025_2026, "Escuela Técnica Superior de Ingeniería");
+            Grado mates = crearGrado("Matemáticas", CursoAcademico._2025_2026, "Facultad de Matemáticas");
+            crearGrado("Historia", CursoAcademico._2025_2026, "Facultad de Filosofía y Letras");
 
             if (asignaturaRepository.count() == 0) {
-                Asignatura asig1 = crearAsignatura("Programación Avanzada", "PROG", "Curso sobre Java, Spring Boot y patrones de diseño.", ingenieria, profesor, estudiante, admin);
-                crearAsignatura("Arquitectura de Software", "ARQ", "Diseño de sistemas escalables y microservicios.", ingenieria, profesor, estudiante, admin);
-                crearAsignatura("Cálculo I", "CAL1", "Límites, derivadas e integrales.", mates, profesor, estudiante, admin);
+                Asignatura asig1 = crearAsignatura("Programación Avanzada", "PROG", "Curso sobre Java, Spring Boot y patrones de diseño.", ingenieria, profesor, estudiante, admin, "Aula 1.1");
+                crearAsignatura("Arquitectura de Software", "ARQ", "Diseño de sistemas escalables y microservicios.", ingenieria, profesor, estudiante, admin, "Aula 2.3");
+                crearAsignatura("Cálculo I", "CAL1", "Límites, derivadas e integrales.", mates, profesor, estudiante, admin, "Aula B.1");
 
                 seedAsignaturaContent(asig1, profesor, estudiante);
             }
@@ -129,14 +132,15 @@ public class DataSeeder implements CommandLineRunner {
         });
     }
 
-    private Grado crearGrado(String nombre, CursoAcademico curso) {
+    private Grado crearGrado(String nombre, CursoAcademico curso, String centro) {
         Grado g = new Grado();
         g.setNombre(nombre);
         g.setCursoAcademico(curso);
+        g.setCentroImparticion(centro);
         return gradoRepository.save(g);
     }
 
-    private Asignatura crearAsignatura(String nombre, String siglas, String desc, Grado grado, Persona profesor, Persona estudiante, Persona admin) {
+    private Asignatura crearAsignatura(String nombre, String siglas, String desc, Grado grado, Persona profesor, Persona estudiante, Persona admin, String aula) {
         Asignatura a = new Asignatura();
         a.setNombre(nombre);
         a.setSiglas(siglas);
@@ -145,6 +149,7 @@ public class DataSeeder implements CommandLineRunner {
         a.setCreador(admin);
         a.setProfesores(new ArrayList<>(List.of(profesor)));
         a.setEstudiantes(new ArrayList<>(List.of(estudiante)));
+        a.setAula(aula);
         return asignaturaRepository.save(a);
     }
 
@@ -171,12 +176,15 @@ public class DataSeeder implements CommandLineRunner {
         crearForoRespuesta("Es mejor usar el constructor porque facilita los tests unitarios.", tema, profesor);
 
         // Grupos
-        crearGrupo("Grupo de Prácticas A", Grupo.TipoGrupo.PRACTICA, true, asig);
+        Grupo g1 = crearGrupo("Grupo de Prácticas A", Grupo.TipoGrupo.PRACTICA, true, asig);
         crearGrupo("Grupo de Teoría 1", Grupo.TipoGrupo.TEORIA, false, asig);
 
         // Clases / Horario (Usando String para las horas según el modelo Clase)
         crearClase("2026-03-16T09:00:00", "2026-03-16T11:00:00", asig, profesor, estudiante);
         crearClase("2026-03-18T11:30:00", "2026-03-18T13:30:00", asig, profesor, estudiante);
+
+        // --- RECURRING SCHEDULES ---
+        crearHorario(asig, g1, profesor, "Teoria General", "Aula 1.1", java.time.DayOfWeek.MONDAY, "09:00", "11:00");
     }
 
     private void crearAnuncio(String titulo, String cont, boolean imp, Asignatura asig, Persona autor) {
@@ -247,24 +255,41 @@ public class DataSeeder implements CommandLineRunner {
         foroRespuestaRepository.save(r);
     }
 
-    private void crearGrupo(String nom, Grupo.TipoGrupo tipo, boolean inscr, Asignatura asig) {
+    private Grupo crearGrupo(String nom, Grupo.TipoGrupo tipo, boolean inscr, Asignatura asig) {
         Grupo g = new Grupo();
         g.setNombre(nom);
         g.setTipo(tipo);
         g.setInscribible(inscr);
         g.setAsignatura(asig);
-        grupoRepository.save(g);
+        return grupoRepository.save(g);
     }
 
     private void crearClase(String inicio, String fin, Asignatura asig, Persona prof, Persona alum) {
         Clase c = new Clase();
-        c.setHoraComienzo(inicio);
-        c.setHoraFin(fin);
+        c.setTitulo("Sesión de " + asig.getNombre());
+        c.setHoraComienzo(LocalDateTime.parse(inicio));
+        c.setHoraFin(LocalDateTime.parse(fin));
         c.setAsignatura(asig);
         c.setProfesor(prof);
         c.setAlumno(alum);
         c.setEstadoClase(EstadoClase.ACEPTADA);
         claseRepository.save(c);
+    }
+
+    private void crearHorario(Asignatura asig, Grupo grupo, Persona prof, String titulo, String aula, java.time.DayOfWeek dia, String hi, String hf) {
+        HorarioRecurrente h = new HorarioRecurrente();
+        h.setAsignatura(asig);
+        h.setGrupo(grupo);
+        h.setProfesor(prof);
+        h.setTitulo(titulo);
+        h.setAula(aula);
+        h.setDiaSemana(dia);
+        h.setHoraInicio(java.time.LocalTime.parse(hi));
+        h.setHoraFin(java.time.LocalTime.parse(hf));
+        h.setFechaInicio(java.time.LocalDate.now());
+        h.setFechaFin(java.time.LocalDate.now().plusMonths(4));
+        h.setFrecuenciaSemanas(1);
+        horarioRepository.save(h);
     }
 
     private void seedLogros() {

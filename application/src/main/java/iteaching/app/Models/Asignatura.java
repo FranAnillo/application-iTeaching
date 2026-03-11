@@ -46,6 +46,9 @@ public class Asignatura {
     @Column(length = 1000)
     private String descripcion;
 
+    @Column(length = 255)
+    private String aula;
+
     @Column(name = "url")
     private String url;
 

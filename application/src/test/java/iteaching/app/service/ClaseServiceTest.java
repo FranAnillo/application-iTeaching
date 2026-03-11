@@ -6,9 +6,8 @@ import iteaching.app.Models.EstadoClase;
 import iteaching.app.Models.Persona;
 import iteaching.app.dto.ClaseCreateRequest;
 import iteaching.app.dto.ClaseDTO;
-import iteaching.app.repository.AsignaturaRepository;
-import iteaching.app.repository.ClaseRepository;
-import iteaching.app.repository.PersonaRepository;
+import iteaching.app.repository.*;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +32,7 @@ class ClaseServiceTest {
     @Mock private ClaseRepository claseRepository;
     @Mock private PersonaRepository personaRepository;
     @Mock private AsignaturaRepository asignaturaRepository;
+    @Mock private GrupoRepository grupoRepository;
 
     @InjectMocks private ClaseService service;
 
@@ -63,8 +63,8 @@ class ClaseServiceTest {
 
         clase = new Clase();
         clase.setId(10L);
-        clase.setHoraComienzo("10:00");
-        clase.setHoraFin("11:00");
+        clase.setHoraComienzo(LocalDateTime.parse("2026-03-16T10:00:00"));
+        clase.setHoraFin(LocalDateTime.parse("2026-03-16T11:00:00"));
         clase.setAlumno(alumno);
         clase.setProfesor(profesor);
         clase.setAsignatura(asignatura);
@@ -84,7 +84,7 @@ class ClaseServiceTest {
     void findById_found() {
         when(claseRepository.findById(10L)).thenReturn(Optional.of(clase));
         ClaseDTO dto = service.findById(10L);
-        assertEquals("10:00", dto.getHoraComienzo());
+        assertTrue(dto.getHoraComienzo().contains("10:00"));
         assertEquals("SOLICITADA", dto.getEstadoClase());
     }
 
@@ -114,11 +114,17 @@ class ClaseServiceTest {
 
     @Test
     void create_success() {
-        ClaseCreateRequest request = new ClaseCreateRequest("09:00", "10:00", 1L, 2L, 5L);
+        ClaseCreateRequest request = new ClaseCreateRequest();
+        request.setHoraComienzo("2026-03-16T09:00:00");
+        request.setHoraFin("2026-03-16T10:00:00");
+        request.setAlumnoId(1L);
+        request.setProfesorId(2L);
+        request.setAsignaturaId(5L);
 
         when(personaRepository.findById(1L)).thenReturn(Optional.of(alumno));
         when(personaRepository.findById(2L)).thenReturn(Optional.of(profesor));
         when(asignaturaRepository.findById(5L)).thenReturn(Optional.of(asignatura));
+        
         when(claseRepository.save(any(Clase.class))).thenAnswer(inv -> {
             Clase c = inv.getArgument(0);
             c.setId(20L);
@@ -127,15 +133,20 @@ class ClaseServiceTest {
 
         ClaseDTO result = service.create(request);
         assertNotNull(result);
-        assertEquals("09:00", result.getHoraComienzo());
-        assertEquals("SOLICITADA", result.getEstadoClase());
+        assertTrue(result.getHoraComienzo().contains("09:00"));
+        assertEquals("ACEPTADA", result.getEstadoClase());
         assertTrue(result.getAceptacionAlumno());
-        assertFalse(result.getAceptacionProfesor());
+        assertTrue(result.getAceptacionProfesor());
     }
 
     @Test
-    void create_alumnoNotFound_throws() {
-        ClaseCreateRequest request = new ClaseCreateRequest("09:00", "10:00", 999L, 2L, 5L);
+    void create_profesorNotFound_throws() {
+        ClaseCreateRequest request = new ClaseCreateRequest();
+        request.setHoraComienzo("2026-03-16T09:00:00");
+        request.setHoraFin("2026-03-16T10:00:00");
+        request.setProfesorId(999L);
+        request.setAsignaturaId(5L);
+        
         when(personaRepository.findById(999L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> service.create(request));
     }

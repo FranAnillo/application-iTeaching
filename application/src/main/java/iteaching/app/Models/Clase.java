@@ -1,19 +1,11 @@
 package iteaching.app.Models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -26,11 +18,17 @@ public class Clase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "titulo")
+    private String titulo; // e.g. "Theory Lecture 1"
+
+    @Column(name = "aula")
+    private String aula;
+
     @Column(name = "hora_comienzo")
-    private String horaComienzo;
+    private LocalDateTime horaComienzo;
 
     @Column(name = "hora_fin")
-    private String horaFin;
+    private LocalDateTime horaFin;
 
     @Column(name = "aceptacion_alumno", columnDefinition = "boolean default false")
     private Boolean aceptacionAlumno = false;
@@ -44,7 +42,7 @@ public class Clase {
 
     @ManyToOne
     @JoinColumn(name = "alumno_id")
-    private Persona alumno;
+    private Persona alumno; // For 1-on-1 tutoring, null for group classes
 
     @ManyToOne
     @JoinColumn(name = "profesor_id")
@@ -53,4 +51,11 @@ public class Clase {
     @ManyToOne
     @JoinColumn(name = "asignatura_id")
     private Asignatura asignatura;
+
+    @ManyToOne
+    @JoinColumn(name = "grupo_id")
+    private Grupo grupo; // For theory/practice group schedules
+
+    @Column(name = "recurrente_id")
+    private Long recurrenteId; // Link back to the rule that created this
 }

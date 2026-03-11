@@ -26,4 +26,7 @@ public class Grado {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private CursoAcademico cursoAcademico;
+
+    @Column(length = 255)
+    private String centroImparticion;
 }

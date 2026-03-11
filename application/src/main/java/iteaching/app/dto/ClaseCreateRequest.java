@@ -10,14 +10,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ClaseCreateRequest {
+    private String titulo;
+    private String aula;
+    
     @NotBlank
     private String horaComienzo;
     @NotBlank
     private String horaFin;
-    @NotNull
-    private Long alumnoId;
+    
+    private Long alumnoId; // Optional for group classes
     @NotNull
     private Long profesorId;
     @NotNull
     private Long asignaturaId;
+    
+    private Long grupoId; // Optional
 }

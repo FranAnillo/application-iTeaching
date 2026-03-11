@@ -16,8 +16,11 @@ import org.springframework.stereotype.Service;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.DayOfWeek;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class HorarioPdfService {
@@ -93,43 +96,12 @@ public class HorarioPdfService {
                 noData.setSpacingBefore(30);
                 document.add(noData);
             } else {
-                // ---- Table ----
-                PdfPTable table = new PdfPTable(4);
-                table.setWidthPercentage(100);
-                table.setWidths(new float[]{3f, 2f, 2f, 2.5f});
-                table.setSpacingBefore(10);
-
-                // Header row
-                Color headerBg = new Color(79, 70, 229); // indigo-600
-                addHeaderCell(table, "Profesor", headerFont, headerBg);
-                addHeaderCell(table, "Hora Inicio", headerFont, headerBg);
-                addHeaderCell(table, "Hora Fin", headerFont, headerBg);
-                addHeaderCell(table, "Estado", headerFont, headerBg);
-
-                // Data rows
-                boolean alternate = false;
-                for (Clase c : clases) {
-                    Color rowBg = alternate ? new Color(238, 242, 255) : Color.WHITE;
-
-                    addDataCell(table, c.getProfesor() != null ? c.getProfesor().getNombreCompleto() : "-", cellFont, rowBg);
-                    addDataCell(table, c.getHoraComienzo() != null ? c.getHoraComienzo() : "-", cellFont, rowBg);
-                    addDataCell(table, c.getHoraFin() != null ? c.getHoraFin() : "-", cellFont, rowBg);
-
-                    // Estado with color
-                    String estado = c.getEstadoClase() != null ? c.getEstadoClase().name() : "-";
-                    Color estadoColor = getEstadoColor(estado);
-                    Font estadoFont = new Font(Font.HELVETICA, 10, Font.BOLD, estadoColor);
-                    addDataCell(table, estado, estadoFont, rowBg);
-
-                    alternate = !alternate;
-                }
-
-                document.add(table);
+                addCalendarGrid(document, clases, cellFont, headerFont);
             }
 
             // ---- Footer ----
             Paragraph footer = new Paragraph(
-                    "\niTeaching 2.0 - Documento generado automaticamente",
+                    "\niTeaching 2.0 - Documento generado automáticamente",
                     footerFont
             );
             footer.setAlignment(Element.ALIGN_CENTER);
@@ -142,6 +114,62 @@ public class HorarioPdfService {
         }
 
         return baos.toByteArray();
+    }
+
+    private void addCalendarGrid(Document document, List<Clase> clases, Font cellFont, Font headerFont) throws DocumentException {
+        // ---- Table setup (Time + 5 Days) ----
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{1.5f, 2f, 2f, 2f, 2f, 2f});
+        table.setSpacingBefore(10);
+
+        Color headerBg = new Color(30, 58, 138); // navy blue
+        addHeaderCell(table, "Hora", headerFont, headerBg);
+        addHeaderCell(table, "Lunes", headerFont, headerBg);
+        addHeaderCell(table, "Martes", headerFont, headerBg);
+        addHeaderCell(table, "Miércoles", headerFont, headerBg);
+        addHeaderCell(table, "Jueves", headerFont, headerBg);
+        addHeaderCell(table, "Viernes", headerFont, headerBg);
+
+        // Sorting and grouping (approximate weekly view)
+        DayOfWeek[] days = {DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY};
+        
+        // Define rows from 08:00 to 20:00
+        for (int h = 8; h <= 20; h++) {
+            LocalTime startHour = LocalTime.of(h, 0);
+            LocalTime endHour = LocalTime.of(h, 59);
+            
+            // Time column
+            addDataCell(table, String.format("%02d:00", h), cellFont, new Color(243, 244, 246));
+
+            for (DayOfWeek day : days) {
+                // Find classes on this day that overlap with this hour
+                List<Clase> dayClasses = clases.stream()
+                        .filter(c -> c.getHoraComienzo().getDayOfWeek() == day)
+                        .filter(c -> {
+                            LocalTime startTime = c.getHoraComienzo().toLocalTime();
+                            LocalTime endTime = c.getHoraFin().toLocalTime();
+                            return !startTime.isAfter(endHour) && !endTime.isBefore(startHour);
+                        })
+                        .collect(Collectors.toList());
+
+                if (dayClasses.isEmpty()) {
+                    addDataCell(table, "", cellFont, Color.WHITE);
+                } else {
+                    StringBuilder cellText = new StringBuilder();
+                    for (Clase c : dayClasses) {
+                        cellText.append(c.getTitulo() != null ? c.getTitulo() : "Clase").append("\n");
+                        cellText.append(c.getHoraComienzo().toLocalTime().toString()).append(" - ");
+                        cellText.append(c.getHoraFin().toLocalTime().toString());
+                        if (c.getAula() != null) cellText.append("\n(").append(c.getAula()).append(")");
+                    }
+                    Color cellColor = new Color(219, 234, 254); // Light blue
+                    addDataCell(table, cellText.toString(), new Font(Font.HELVETICA, 8), cellColor);
+                }
+            }
+        }
+
+        document.add(table);
     }
 
     /**
@@ -177,7 +205,7 @@ public class HorarioPdfService {
             document.add(sub);
 
             String fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            Paragraph dateInfo = new Paragraph("Fecha de generacion: " + fecha, footerFont);
+            Paragraph dateInfo = new Paragraph("Fecha de generación: " + fecha, footerFont);
             dateInfo.setAlignment(Element.ALIGN_CENTER);
             dateInfo.setSpacingAfter(20);
             document.add(dateInfo);
@@ -188,40 +216,11 @@ public class HorarioPdfService {
                 noData.setSpacingBefore(30);
                 document.add(noData);
             } else {
-                PdfPTable table = new PdfPTable(5);
-                table.setWidthPercentage(100);
-                table.setWidths(new float[]{2.5f, 2.5f, 2f, 2f, 2f});
-                table.setSpacingBefore(10);
-
-                Color headerBg = new Color(79, 70, 229);
-                addHeaderCell(table, "Alumno", headerFont, headerBg);
-                addHeaderCell(table, "Profesor", headerFont, headerBg);
-                addHeaderCell(table, "Hora Inicio", headerFont, headerBg);
-                addHeaderCell(table, "Hora Fin", headerFont, headerBg);
-                addHeaderCell(table, "Estado", headerFont, headerBg);
-
-                boolean alternate = false;
-                for (Clase c : clases) {
-                    Color rowBg = alternate ? new Color(238, 242, 255) : Color.WHITE;
-
-                    addDataCell(table, c.getAlumno() != null ? c.getAlumno().getNombreCompleto() : "-", cellFont, rowBg);
-                    addDataCell(table, c.getProfesor() != null ? c.getProfesor().getNombreCompleto() : "-", cellFont, rowBg);
-                    addDataCell(table, c.getHoraComienzo() != null ? c.getHoraComienzo() : "-", cellFont, rowBg);
-                    addDataCell(table, c.getHoraFin() != null ? c.getHoraFin() : "-", cellFont, rowBg);
-
-                    String estado = c.getEstadoClase() != null ? c.getEstadoClase().name() : "-";
-                    Color estadoColor = getEstadoColor(estado);
-                    Font estadoFont = new Font(Font.HELVETICA, 10, Font.BOLD, estadoColor);
-                    addDataCell(table, estado, estadoFont, rowBg);
-
-                    alternate = !alternate;
-                }
-
-                document.add(table);
+                addCalendarGrid(document, clases, cellFont, headerFont);
             }
 
             Paragraph footer = new Paragraph(
-                    "\niTeaching 2.0 - Documento generado automaticamente",
+                    "\niTeaching 2.0 - Documento generado automáticamente",
                     footerFont
             );
             footer.setAlignment(Element.ALIGN_CENTER);

@@ -10,4 +10,5 @@ public class GradoDTO {
     private Long id;
     private String nombre;
     private CursoAcademico cursoAcademico;
+    private String centroImparticion;
 }
