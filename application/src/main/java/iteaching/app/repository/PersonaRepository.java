@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface PersonaRepository extends JpaRepository<Persona, Long> {
@@ -14,4 +15,5 @@ public interface PersonaRepository extends JpaRepository<Persona, Long> {
     boolean existsByEmail(String email);
     List<Persona> findByNombreContainingIgnoreCase(String nombre);
     List<Persona> findByApellidoContainingIgnoreCase(String apellido);
+    Set<Persona> findByRole(String role);
 }

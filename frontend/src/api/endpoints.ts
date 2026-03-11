@@ -131,6 +131,7 @@ export const adminApi = {
 // ===== Anuncios =====
 export const anunciosApi = {
   getByAsignatura: (asignaturaId: number) => api.get<Anuncio[]>(`/anuncios/asignatura/${asignaturaId}`),
+  getGlobal: () => api.get<Anuncio[]>('/anuncios/global'),
   getById: (id: number) => api.get<Anuncio>(`/anuncios/${id}`),
   create: (data: Partial<Anuncio>) => api.post<Anuncio>('/anuncios', data),
   delete: (id: number) => api.delete(`/anuncios/${id}`),

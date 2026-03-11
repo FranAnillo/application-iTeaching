@@ -140,10 +140,12 @@ export interface Anuncio {
   contenido: string;
   fechaCreacion: string;
   importante: boolean;
-  asignaturaId: number;
-  asignaturaNombre: string;
-  autorId: number;
-  autorNombre: string;
+  asignaturaId?: number;
+  asignaturaNombre?: string;
+  autorId?: number;
+  autorNombre?: string;
+  global?: boolean;
+  destinatarios?: string;
 }
 
 // ===== Tarea (Assignment) =====
