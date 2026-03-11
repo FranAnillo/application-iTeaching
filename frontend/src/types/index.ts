@@ -39,12 +39,16 @@ export type CursoAcademico =
   | 'SEGUNDO'
   | 'TERCERO'
   | 'CUARTO'
-  | 'QUINTO';
+  | 'QUINTO'
+  | '2025/2026'
+  | '2026/2027'
+  | '2027/2028';
 
 export interface Grado {
   id: number;
   nombre: string;
   cursoAcademico: CursoAcademico;
+  centroImparticion?: string;
   asignaturaIds: number[];
 }
 
@@ -54,6 +58,7 @@ export interface Asignatura {
   siglas: string;
   descripcion: string;
   url?: string;
+  aula?: string;
   creadorId?: number;
   creadorNombre?: string;
   profesorIds: number[];

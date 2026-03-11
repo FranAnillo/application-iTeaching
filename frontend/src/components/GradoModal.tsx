@@ -17,6 +17,7 @@ export interface GradoModalProps {
 export default function GradoModal({ open, onClose, onSubmit, initial }: GradoModalProps) {
   const [nombre, setNombre] = useState(initial?.nombre || '');
   const [cursoAcademico, setCursoAcademico] = useState(initial?.cursoAcademico || CURSOS[0].value);
+  const [centroImparticion, setCentroImparticion] = useState(initial?.centroImparticion || '');
   const [error, setError] = useState('');
 
   if (!open) return null;
@@ -40,7 +41,12 @@ export default function GradoModal({ open, onClose, onSubmit, initial }: GradoMo
               return;
             }
             setError('');
-            onSubmit({ nombre, cursoAcademico });
+            onSubmit({ 
+              nombre, 
+              cursoAcademico: cursoAcademico as any, 
+              centroImparticion, 
+              asignaturaIds: initial?.asignaturaIds || [] 
+            });
           }}
         >
           <div className="mb-4">
@@ -69,6 +75,18 @@ export default function GradoModal({ open, onClose, onSubmit, initial }: GradoMo
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <span role="img" aria-label="Centro">🏢</span> Centro de impartición
+            </label>
+            <input
+              type="text"
+              value={centroImparticion}
+              onChange={e => setCentroImparticion(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              placeholder="Ejemplo: Facultad de Informática"
+            />
           </div>
           {error && <div className="mb-2 text-xs text-red-600 dark:text-red-400">{error}</div>}
           <div className="flex gap-3 mt-4">

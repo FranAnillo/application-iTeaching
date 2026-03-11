@@ -63,7 +63,7 @@ export default function AsignaturaDetailPage() {
   var error = errorState[0];
   var setError = errorState[1];
 
-  var formState = useState<Partial<Asignatura>>({ nombre: '', descripcion: '', url: '', siglas: '', gradoId: 0 });
+  var formState = useState<Partial<Asignatura>>({ nombre: '', descripcion: '', url: '', aula: '', siglas: '', gradoId: 0 });
   var form = formState[0];
   var setForm = formState[1];
 
@@ -369,7 +369,7 @@ export default function AsignaturaDetailPage() {
 
   function handleSubmitEntrega(e: FormEvent) {
     e.preventDefault();
-    var currentTarea = selectedTarea;
+    const currentTarea = selectedTarea;
     if (!currentTarea) return;
 
     var promise = selectedFile 
@@ -377,13 +377,12 @@ export default function AsignaturaDetailPage() {
       : Promise.resolve(entregaForm.urlAdjunto);
 
     promise.then(function(finalUrl) {
-      if (!currentTarea) return;
       entregasApi.submit(Object.assign({}, entregaForm, { tareaId: currentTarea.id, urlAdjunto: finalUrl }))
         .then(function () { 
           setShowEntregaForm(false); 
           setEntregaForm({ contenido: '', urlAdjunto: '' }); 
           setSelectedFile(null);
-          handleSelectTarea(currentTarea as Tarea); 
+          handleSelectTarea(currentTarea); 
         });
     }).catch(function() {
       alert('Error al subir el archivo o enviar la entrega');
@@ -393,9 +392,10 @@ export default function AsignaturaDetailPage() {
   function handleCalificar(entregaId: number) {
     var cal = prompt('Calificacion (0-10):');
     if (!cal) return;
+    const currentTarea = selectedTarea;
     var comentario = prompt('Comentario (opcional):') || '';
     entregasApi.calificar(entregaId, Number(cal), comentario)
-      .then(function () { if (selectedTarea) handleSelectTarea(selectedTarea); });
+      .then(function () { if (currentTarea) handleSelectTarea(currentTarea); });
   }
 
   function handleCreateTema(e: FormEvent) {
@@ -410,9 +410,10 @@ export default function AsignaturaDetailPage() {
 
   function handleCreateRespuesta(e: FormEvent) {
     e.preventDefault();
-    if (!selectedTema) return;
-    foroApi.createRespuesta({ contenido: respuestaForm, temaId: selectedTema.id })
-      .then(function () { setRespuestaForm(''); handleSelectTema(selectedTema as ForoTema); });
+    const currentTema = selectedTema;
+    if (!currentTema) return;
+    foroApi.createRespuesta({ contenido: respuestaForm, temaId: currentTema.id })
+      .then(function () { setRespuestaForm(''); handleSelectTema(currentTema); });
   }
 
   function handleCreateGrupo(e: FormEvent) {
@@ -475,6 +476,10 @@ export default function AsignaturaDetailPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">URL</label>
             <input type="url" value={form.url || ''} onChange={function (e) { update('url', e.target.value); }} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Aula</label>
+            <input type="text" value={form.aula || ''} onChange={function (e) { update('aula', e.target.value); }} placeholder="Ej: Aula 1.1, Laboratorio 2, etc." className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Grado</label>
@@ -550,12 +555,16 @@ export default function AsignaturaDetailPage() {
       {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {/* ===== INFO TAB ===== */}
-      {tab === 'info' && isAdmin && (
+      {tab === 'info' && isAdmin && (!asignatura || !asignatura.gradoId) && (
         <form onSubmit={handleSubmitAsignatura} className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900">Editar curso</h3>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
             <input type="text" value={form.nombre || ''} onChange={function (e) { update('nombre', e.target.value); }} required className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Siglas</label>
+            <input type="text" value={form.siglas || ''} onChange={function (e) { update('siglas', e.target.value); }} required maxLength={20} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Descripcion</label>
@@ -565,15 +574,36 @@ export default function AsignaturaDetailPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">URL</label>
             <input type="url" value={form.url || ''} onChange={function (e) { update('url', e.target.value); }} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
           </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Aula</label>
+            <input type="text" value={form.aula || ''} onChange={function (e) { update('aula', e.target.value); }} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Grado</label>
+            <select 
+              value={form.gradoId || ''} 
+              onChange={function (e) { update('gradoId', Number(e.target.value)); }} 
+              required 
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="" disabled>Selecciona un grado</option>
+              {gradosList.map(function (g) {
+                return <option key={g.id} value={g.id}>{g.nombre} ({g.cursoAcademico})</option>;
+              })}
+            </select>
+          </div>
           <button type="submit" disabled={saving} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition">{saving ? 'Guardando...' : 'Guardar cambios'}</button>
         </form>
       )}
-      {tab === 'info' && !isAdmin && (
+      {tab === 'info' && (!isAdmin || (asignatura && asignatura.gradoId)) && (
         <div className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900">Informacion del curso</h3>
           <p className="text-sm text-gray-600"><strong>Nombre:</strong> {asignatura ? asignatura.nombre : ''}</p>
+          <p className="text-sm text-gray-600"><strong>Siglas:</strong> {asignatura ? asignatura.siglas : ''}</p>
           <p className="text-sm text-gray-600"><strong>Descripcion:</strong> {asignatura && asignatura.descripcion ? asignatura.descripcion : 'Sin descripcion'}</p>
+          {asignatura && asignatura.aula && <p className="text-sm text-gray-600"><strong>Aula:</strong> {asignatura.aula}</p>}
           {asignatura && asignatura.url && <p className="text-sm text-gray-600"><strong>URL:</strong> <a href={asignatura.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600">{asignatura.url}</a></p>}
+          <p className="text-sm text-gray-600"><strong>Grado:</strong> {asignatura && asignatura.gradoNombre ? asignatura.gradoNombre : 'N/A'}</p>
           <p className="text-sm text-gray-600"><strong>Creador:</strong> {asignatura && asignatura.creadorNombre ? asignatura.creadorNombre : 'N/A'}</p>
           <p className="text-sm text-gray-600"><strong>Profesores:</strong> {asignatura && asignatura.profesorIds ? asignatura.profesorIds.length : 0}</p>
           <p className="text-sm text-gray-600"><strong>Estudiantes:</strong> {asignatura && asignatura.estudianteIds ? asignatura.estudianteIds.length : 0}</p>
@@ -733,6 +763,7 @@ export default function AsignaturaDetailPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Profesor</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Aula</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Hora inicio</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Hora fin</th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
@@ -748,6 +779,7 @@ export default function AsignaturaDetailPage() {
                     return (
                       <tr key={c.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{c.profesorNombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{asignatura ? asignatura.aula : '-'}</td>
                         <td className="px-4 py-3 text-sm text-gray-500">{c.horaComienzo}</td>
                         <td className="px-4 py-3 text-sm text-gray-500">{c.horaFin}</td>
                         <td className="px-4 py-3"><span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + estadoColor}>{c.estadoClase}</span></td>
@@ -876,7 +908,7 @@ export default function AsignaturaDetailPage() {
                       </div>
                       {en.calificacion !== null ? (
                         <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-800">
-                          {en.calificacion}/{selectedTarea.puntuacionMaxima}
+                          {en.calificacion}/{selectedTarea!.puntuacionMaxima}
                         </span>
                       ) : (
                         canManageContent && (
@@ -981,7 +1013,7 @@ export default function AsignaturaDetailPage() {
                             <p className="text-xs text-gray-400">{new Date(en.fechaEntrega).toLocaleString('es-ES')}</p>
                           </div>
                           {en.calificacion !== null ? (
-                            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-800">{en.calificacion}/{selectedTarea.puntuacionMaxima}</span>
+                            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-800">{en.calificacion}/{selectedTarea!.puntuacionMaxima}</span>
                           ) : (
                             <button onClick={function () { handleCalificar(en.id); }} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100">Calificar</button>
                           )}
@@ -1079,7 +1111,7 @@ export default function AsignaturaDetailPage() {
                         <p className="text-xs text-gray-400">{new Date(en.fechaEntrega).toLocaleString('es-ES')}</p>
                       </div>
                       {en.calificacion !== null ? (
-                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-sm font-semibold text-purple-800">{en.calificacion}/{selectedTarea.puntuacionMaxima}</span>
+                        <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-sm font-semibold text-purple-800">{en.calificacion}/{selectedTarea!.puntuacionMaxima}</span>
                       ) : canManageContent ? (
                         <button onClick={function () { handleCalificar(en.id); }} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 hover:bg-amber-100">Calificar</button>
                       ) : (

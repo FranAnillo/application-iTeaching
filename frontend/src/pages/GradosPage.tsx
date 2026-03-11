@@ -75,6 +75,7 @@ export default function GradosPage() {
           <tr>
             <th className="px-4 py-2 text-left">Nombre</th>
             <th className="px-4 py-2 text-left">Curso académico</th>
+            <th className="px-4 py-2 text-left">Centro</th>
             <th className="px-4 py-2 text-left">Asignaturas</th>
             <th className="px-4 py-2 text-left">Acciones</th>
           </tr>
@@ -84,12 +85,9 @@ export default function GradosPage() {
             <tr key={g.id} className="border">
               <td className="px-4 py-2">{g.nombre}</td>
               <td className="px-4 py-2">{g.cursoAcademico}</td>
+              <td className="px-4 py-2">{g.centroImparticion || 'N/A'}</td>
               <td className="px-4 py-2">{g.asignaturaIds?.length ?? 0}</td>
               <td className="px-4 py-2 flex gap-2">
-                <button
-                  className="text-xs text-blue-600 hover:underline"
-                  onClick={() => openEdit(g)}
-                >Editar asignaturas</button>
                 <button
                   className="text-xs text-green-600 hover:underline"
                   onClick={() => setShowAsignaturaModal({ open: true, grado: g })}

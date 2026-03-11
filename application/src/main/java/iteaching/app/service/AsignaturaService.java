@@ -184,9 +184,10 @@ public class AsignaturaService {
 
                 Asignatura a = new Asignatura();
                 a.setNombre(InputSanitizer.sanitize(parts[0].trim()));
-                a.setSiglas(parts.length > 3 ? InputSanitizer.sanitize(parts[3].trim()) : "");
-                a.setDescripcion(parts.length > 1 ? InputSanitizer.sanitize(parts[1].trim()) : "");
-                a.setUrl(parts.length > 2 ? InputSanitizer.sanitizeUrl(parts[2].trim()) : "");
+                a.setSiglas(parts.length > 1 ? InputSanitizer.sanitize(parts[1].trim()) : "");
+                a.setDescripcion(parts.length > 2 ? InputSanitizer.sanitize(parts[2].trim()) : "");
+                a.setUrl(parts.length > 3 ? InputSanitizer.sanitizeUrl(parts[3].trim()) : "");
+                a.setAula(parts.length > 4 ? InputSanitizer.sanitize(parts[4].trim()) : "");
                 a.setCreador(admin);
                 
                 // For CSV import, we use the first available grado as default if not specified

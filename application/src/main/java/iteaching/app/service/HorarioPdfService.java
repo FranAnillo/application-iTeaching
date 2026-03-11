@@ -69,10 +69,18 @@ public class HorarioPdfService {
             document.add(title);
 
             // ---- Subtitle: asignatura + student ----
-            Paragraph sub = new Paragraph("Asignatura: " + asignatura.getNombre(), subtitleFont);
+            Paragraph sub = new Paragraph("Asignatura: " + asignatura.getNombre() + 
+                (asignatura.getAula() != null ? " (" + asignatura.getAula() + ")" : ""), subtitleFont);
             sub.setAlignment(Element.ALIGN_CENTER);
             sub.setSpacingAfter(4);
             document.add(sub);
+
+            if (asignatura.getGrado() != null && asignatura.getGrado().getCentroImparticion() != null) {
+                Paragraph centroInfo = new Paragraph("Centro: " + asignatura.getGrado().getCentroImparticion(), subtitleFont);
+                centroInfo.setAlignment(Element.ALIGN_CENTER);
+                centroInfo.setSpacingAfter(4);
+                document.add(centroInfo);
+            }
 
             Paragraph studentInfo = new Paragraph("Estudiante: " + alumno.getNombreCompleto(), subtitleFont);
             studentInfo.setAlignment(Element.ALIGN_CENTER);
@@ -80,7 +88,7 @@ public class HorarioPdfService {
             document.add(studentInfo);
 
             String fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            Paragraph dateInfo = new Paragraph("Fecha de generacion: " + fecha, footerFont);
+            Paragraph dateInfo = new Paragraph("Fecha de generación: " + fecha, footerFont);
             dateInfo.setAlignment(Element.ALIGN_CENTER);
             dateInfo.setSpacingAfter(20);
             document.add(dateInfo);
@@ -199,10 +207,18 @@ public class HorarioPdfService {
             title.setSpacingAfter(8);
             document.add(title);
 
-            Paragraph sub = new Paragraph("Asignatura: " + asignatura.getNombre(), subtitleFont);
+            Paragraph sub = new Paragraph("Asignatura: " + asignatura.getNombre() + 
+                (asignatura.getAula() != null ? " (" + asignatura.getAula() + ")" : ""), subtitleFont);
             sub.setAlignment(Element.ALIGN_CENTER);
             sub.setSpacingAfter(4);
             document.add(sub);
+
+            if (asignatura.getGrado() != null && asignatura.getGrado().getCentroImparticion() != null) {
+                Paragraph centroInfo = new Paragraph("Centro: " + asignatura.getGrado().getCentroImparticion(), subtitleFont);
+                centroInfo.setAlignment(Element.ALIGN_CENTER);
+                centroInfo.setSpacingAfter(4);
+                document.add(centroInfo);
+            }
 
             String fecha = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
             Paragraph dateInfo = new Paragraph("Fecha de generación: " + fecha, footerFont);

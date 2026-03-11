@@ -38,7 +38,7 @@ class GradoServiceTest {
         grado = new Grado();
         grado.setId(1L);
         grado.setNombre("Ingenieria");
-        grado.setCursoAcademico(CursoAcademico.valueOf("Y2025_2026"));
+        grado.setCursoAcademico(CursoAcademico._2025_2026);
         asignatura = new Asignatura();
         asignatura.setId(10L);
         asignatura.setNombre("Matematicas");
@@ -56,7 +56,7 @@ class GradoServiceTest {
     void save_returnsSaved() {
         GradoDTO dto = new GradoDTO();
         dto.setNombre("Ingenieria");
-        grado.setCursoAcademico(CursoAcademico.valueOf("Y2025_2026"));
+        grado.setCursoAcademico(CursoAcademico._2025_2026);
         when(gradoRepository.save(any(Grado.class))).thenReturn(grado);
         GradoDTO result = service.save(dto);
         assertEquals("Ingenieria", result.getNombre());

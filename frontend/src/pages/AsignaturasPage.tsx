@@ -121,6 +121,9 @@ export default function AsignaturasPage() {
                 <h3 className="font-semibold text-gray-900">{a.nombre} <span className="text-xs text-indigo-600">[{a.siglas}]</span></h3>
               </div>
               <p className="mb-3 line-clamp-2 text-sm text-gray-500">{a.descripcion || 'Sin descripción'}</p>
+              {a.aula && (
+                <p className="mb-3 text-xs text-indigo-500 font-medium">Aula: {a.aula}</p>
+              )}
               {a.creadorNombre && (
                 <p className="mb-3 text-xs text-gray-400">Creador: {a.creadorNombre}</p>
               )}
@@ -131,12 +134,14 @@ export default function AsignaturasPage() {
                 >
                   Ver detalle
                 </Link>
-                {isAdmin && <button
-                  onClick={() => handleDelete(a.id)}
-                  className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition"
-                >
-                  Eliminar
-                </button>}
+                {isAdmin && !a.gradoId && (
+                  <button
+                    onClick={() => handleDelete(a.id)}
+                    className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition"
+                  >
+                    Eliminar
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -157,11 +162,11 @@ export default function AsignaturasPage() {
             <div className="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-800 dark:bg-green-900/30 dark:text-green-300">
               <p className="mb-2 font-semibold">Formato del CSV (separado por ;)</p>
               <code className="block rounded bg-white p-2 text-xs dark:bg-gray-900 dark:text-gray-300">
-                nombre;siglas;descripcion;url
+                nombre;siglas;descripcion;url;aula
               </code>
               <p className="mt-2 text-xs">
                 <strong>Campos obligatorios:</strong> nombre, siglas<br />
-                <strong>Campos opcionales:</strong> descripcion, url
+                <strong>Campos opcionales:</strong> descripcion, url, aula
               </p>
             </div>
 

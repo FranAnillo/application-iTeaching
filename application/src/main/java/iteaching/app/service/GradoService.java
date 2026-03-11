@@ -52,6 +52,13 @@ public class GradoService {
         dto.setNombre(g.getNombre());
         dto.setCursoAcademico(g.getCursoAcademico());
         dto.setCentroImparticion(g.getCentroImparticion());
+        
+        List<Long> ids = asignaturaRepository.findByGradoId(g.getId())
+                .stream()
+                .map(Asignatura::getId)
+                .collect(Collectors.toList());
+        dto.setAsignaturaIds(ids);
+        
         return dto;
     }
 

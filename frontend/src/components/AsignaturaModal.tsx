@@ -13,6 +13,7 @@ export default function AsignaturaModal({ open, onClose, onSubmit, grado, initia
   const [nombre, setNombre] = useState(initial?.nombre || '');
   const [siglas, setSiglas] = useState(initial?.siglas || '');
   const [descripcion, setDescripcion] = useState(initial?.descripcion || '');
+  const [aula, setAula] = useState(initial?.aula || '');
   const [error, setError] = useState('');
 
   if (!open) return null;
@@ -31,12 +32,16 @@ export default function AsignaturaModal({ open, onClose, onSubmit, grado, initia
         <form
           onSubmit={e => {
             e.preventDefault();
-            if (!nombre.trim() || !siglas.trim()) {
-              setError('Nombre y siglas son obligatorios');
-              return;
-            }
             setError('');
-            onSubmit({ nombre, siglas, descripcion, gradoId: grado?.id });
+            onSubmit({ 
+              nombre, 
+              siglas, 
+              descripcion, 
+              aula, 
+              gradoId: grado?.id || 0,
+              profesorIds: initial?.profesorIds || [],
+              estudianteIds: initial?.estudianteIds || []
+            });
           }}
         >
           <div className="mb-4">
@@ -74,6 +79,18 @@ export default function AsignaturaModal({ open, onClose, onSubmit, grado, initia
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               placeholder="Descripción breve..."
               rows={3}
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <span role="img" aria-label="Aula">🏫</span> Aula
+            </label>
+            <input
+              type="text"
+              value={aula}
+              onChange={e => setAula(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              placeholder="Ejemplo: Aula 1.1"
             />
           </div>
           {grado && (
