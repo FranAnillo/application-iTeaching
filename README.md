@@ -535,4 +535,7 @@ application-iTeaching/
 Proyecto académico — iTeaching 2.0.
 
 ## Arranque de los dos servicios (Front y back)
+### Windows
 powershell -ExecutionPolicy Bypass -File .\start.ps1
+### MacOS
+bash start.sh

@@ -7,6 +7,7 @@ import iteaching.app.repository.LogroRepository;
 import iteaching.app.repository.UsuarioRepository;
 import iteaching.app.repository.GradoRepository;
 import iteaching.app.Models.Grado;
+import iteaching.app.enums.CursoAcademico;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -96,16 +97,17 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedGrados() {
         if (gradoRepository.count() == 0) {
-            crearGrado("Ingenieria");
-            crearGrado("Matematicas");
-            crearGrado("Historia");
+            crearGrado("Ingenieria", CursoAcademico._2025_2026);
+            crearGrado("Matematicas", CursoAcademico._2025_2026);
+            crearGrado("Historia", CursoAcademico._2025_2026);
             log.info("Grados iniciales creados");
         }
     }
 
-    private void crearGrado(String nombre) {
+    private void crearGrado(String nombre, CursoAcademico curso) {
         Grado g = new Grado();
         g.setNombre(nombre);
+        g.setCursoAcademico(curso);
         gradoRepository.save(g);
     }
 

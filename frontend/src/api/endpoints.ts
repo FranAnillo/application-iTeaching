@@ -22,6 +22,7 @@ import type {
   Progreso,
   Rubrica,
   Logro,
+  Grado,
 } from '../types';
 
 // ===== Auth =====
