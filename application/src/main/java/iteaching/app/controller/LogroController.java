@@ -37,6 +37,20 @@ public class LogroController {
         return ResponseEntity.ok(logroService.getLogrosObtenidos(persona.getId()));
     }
 
+    @GetMapping("/asignatura/{asignaturaId}")
+    public ResponseEntity<List<LogroDTO>> getByAsignatura(Authentication auth, @PathVariable Long asignaturaId) {
+        var persona = personaRepository.findByUsername(auth.getName())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return ResponseEntity.ok(logroService.getLogrosByAsignatura(persona.getId(), asignaturaId));
+    }
+
+    @GetMapping("/generales")
+    public ResponseEntity<List<LogroDTO>> getGenerales(Authentication auth) {
+        var persona = personaRepository.findByUsername(auth.getName())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return ResponseEntity.ok(logroService.getLogrosGenerales(persona.getId()));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LogroDTO> crear(@Valid @RequestBody LogroDTO dto) {

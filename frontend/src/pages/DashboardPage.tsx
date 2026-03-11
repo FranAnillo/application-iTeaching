@@ -71,12 +71,12 @@ export default function DashboardPage() {
                 });
               }
             });
-          }).catch(function () {})
+          }).catch(function () { })
         );
         tareaPromises.push(
           anunciosApi.getByAsignatura(asig.id).then(function (r) {
             anuncios = anuncios.concat(r.data);
-          }).catch(function () {})
+          }).catch(function () { })
         );
       });
 
@@ -90,9 +90,9 @@ export default function DashboardPage() {
       // Load progress
       progresoApi.getGlobal().then(function (r) {
         setProgresoList(r.data);
-      }).catch(function () {});
+      }).catch(function () { });
 
-    }).catch(function () {}).finally(function () { setLoading(false); });
+    }).catch(function () { }).finally(function () { setLoading(false); });
   }, []);
 
   var cards = [
@@ -135,13 +135,13 @@ export default function DashboardPage() {
 
           {/* Mis Cursos */}
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Cursos</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Asignaturas</h3>
             {user && user.role === 'ROLE_ADMIN' && (
-              <Link to="/asignaturas/new" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">+ Nuevo curso</Link>
+              <Link to="/asignaturas/new" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">+ Nueva asignatura</Link>
             )}
           </div>
           {cursos.length === 0 ? (
-            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay cursos disponibles. Crea tu primer curso.</p>
+            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 dark:text-gray-400 shadow-sm">No hay asignaturas disponibles. Crea tu primera asignatura.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {cursos.map(function (c) {
@@ -178,8 +178,8 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {upcoming.map(function (item, idx) {
                     var typeColor = item.tipo === 'EVALUACION' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                    item.tipo === 'SIMULACRO' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+                      item.tipo === 'SIMULACRO' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
                     return (
                       <div key={idx} className="flex items-center gap-3">
                         <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + typeColor}>

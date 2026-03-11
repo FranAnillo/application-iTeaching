@@ -21,5 +21,7 @@ public class LogroDTO {
     private String icono;
     private String categoria;
     private Integer valorObjetivo;
+    private Long asignaturaId;
+    private String asignaturaNombre;
     private boolean obtenido;
 }

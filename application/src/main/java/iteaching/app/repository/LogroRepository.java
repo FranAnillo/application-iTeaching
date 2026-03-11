@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface LogroRepository extends JpaRepository<Logro, Long> {
 
     Optional<Logro> findByCodigo(String codigo);
+    java.util.List<Logro> findByAsignaturaId(Long asignaturaId);
+    java.util.List<Logro> findByAsignaturaIdIsNull();
 }

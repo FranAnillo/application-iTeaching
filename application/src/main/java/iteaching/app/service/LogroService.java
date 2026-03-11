@@ -1,8 +1,10 @@
 package iteaching.app.service;
 
+import iteaching.app.Models.Asignatura;
 import iteaching.app.Models.Logro;
 import iteaching.app.Models.Persona;
 import iteaching.app.dto.LogroDTO;
+import iteaching.app.repository.AsignaturaRepository;
 import iteaching.app.repository.EntregaRepository;
 import iteaching.app.repository.LogroRepository;
 import iteaching.app.repository.PersonaRepository;
@@ -26,16 +28,19 @@ public class LogroService {
     private final LogroRepository logroRepository;
     private final PersonaRepository personaRepository;
     private final NotificacionService notificacionService;
+    private final AsignaturaRepository asignaturaRepository;
 
     @Autowired
     private NotificationService notificationService;
 
     public LogroService(LogroRepository logroRepository,
                         PersonaRepository personaRepository,
-                        NotificacionService notificacionService) {
+                        NotificacionService notificacionService,
+                        AsignaturaRepository asignaturaRepository) {
         this.logroRepository = logroRepository;
         this.personaRepository = personaRepository;
         this.notificacionService = notificacionService;
+        this.asignaturaRepository = asignaturaRepository;
     }
 
     public List<LogroDTO> getAllLogros(Long userId) {
@@ -60,6 +65,36 @@ public class LogroService {
             .map(logro -> {
                 LogroDTO dto = toDTO(logro);
                 dto.setObtenido(true);
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    public List<LogroDTO> getLogrosByAsignatura(Long userId, Long asignaturaId) {
+        Persona persona = personaRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Set<Long> obtenidosIds = persona.getLogros().stream()
+            .map(Logro::getId).collect(Collectors.toSet());
+
+        return logroRepository.findByAsignaturaId(asignaturaId).stream()
+            .map(logro -> {
+                LogroDTO dto = toDTO(logro);
+                dto.setObtenido(obtenidosIds.contains(logro.getId()));
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    public List<LogroDTO> getLogrosGenerales(Long userId) {
+        Persona persona = personaRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Set<Long> obtenidosIds = persona.getLogros().stream()
+            .map(Logro::getId).collect(Collectors.toSet());
+
+        return logroRepository.findByAsignaturaIdIsNull().stream()
+            .map(logro -> {
+                LogroDTO dto = toDTO(logro);
+                dto.setObtenido(obtenidosIds.contains(logro.getId()));
                 return dto;
             })
             .collect(Collectors.toList());
@@ -116,6 +151,13 @@ public class LogroService {
         logro.setIcono(InputSanitizer.sanitize(dto.getIcono()));
         logro.setCategoria(Logro.CategoriaLogro.valueOf(dto.getCategoria()));
         logro.setValorObjetivo(dto.getValorObjetivo());
+        
+        if (dto.getAsignaturaId() != null) {
+            Asignatura asig = asignaturaRepository.findById(dto.getAsignaturaId())
+                .orElseThrow(() -> new RuntimeException("Asignatura no encontrada"));
+            logro.setAsignatura(asig);
+        }
+        
         return toDTO(logroRepository.save(logro));
     }
 
@@ -128,6 +170,10 @@ public class LogroService {
         dto.setIcono(l.getIcono());
         dto.setCategoria(l.getCategoria().name());
         dto.setValorObjetivo(l.getValorObjetivo());
+        if (l.getAsignatura() != null) {
+            dto.setAsignaturaId(l.getAsignatura().getId());
+            dto.setAsignaturaNombre(l.getAsignatura().getNombre());
+        }
         return dto;
     }
 

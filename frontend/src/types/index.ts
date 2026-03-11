@@ -300,5 +300,7 @@ export interface Logro {
   icono: string;
   categoria: string;
   valorObjetivo: number;
+  asignaturaId?: number;
+  asignaturaNombre?: string;
   obtenido: boolean;
 }

@@ -239,6 +239,8 @@ export var rubricasApi = {
 export var logrosApi = {
   getAll: function () { return api.get<Logro[]>('/logros'); },
   getMisLogros: function () { return api.get<Logro[]>('/logros/mis-logros'); },
+  getByAsignatura: function (asignaturaId: number) { return api.get<Logro[]>('/logros/asignatura/' + asignaturaId); },
+  getGenerales: function () { return api.get<Logro[]>('/logros/generales'); },
   crear: function (data: Partial<Logro>) { return api.post<Logro>('/logros', data); },
 };
 

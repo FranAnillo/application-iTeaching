@@ -217,6 +217,7 @@ export default function UsuariosPage() {
                       </p>
                       <button
                         onClick={() => {
+                          if (!importResult) return;
                           const blob = new Blob([importResult.errores.join('\n')], { type: 'text/plain' });
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');

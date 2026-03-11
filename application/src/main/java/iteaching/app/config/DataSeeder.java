@@ -297,12 +297,19 @@ public class DataSeeder implements CommandLineRunner {
             crearLogro("PRIMERA_ENTREGA", "Primera Entrega", "Realizaste tu primera entrega de tarea", "📝", "ACADEMICO", 1);
             crearLogro("CINCO_ENTREGAS", "Estudiante Aplicado", "Completaste 5 entregas", "📚", "ACADEMICO", 5);
             crearLogro("DIEZ_ENTREGAS", "Experto en Entregas", "Completaste 10 entregas", "🎯", "ACADEMICO", 10);
+            crearLogro("VEINTE_ENTREGAS", "Maestro de las Tareas", "Has completado 20 entregas", "🔥", "ACADEMICO", 20);
             crearLogro("NOTA_PERFECTA", "Perfección", "Obtuviste la máxima calificación en una tarea", "⭐", "ACADEMICO", 1);
+            crearLogro("TRES_SOBRESALIENTES", "Triplete de Oro", "Has obtenido 3 notas máximas", "🥇", "ACADEMICO", 3);
             crearLogro("PRIMER_FORO", "Participativo", "Creaste tu primera respuesta en el foro", "💬", "SOCIAL", 1);
             crearLogro("CINCO_FOROS", "Comunicador", "Participaste en 5 discusiones del foro", "🗣️", "SOCIAL", 5);
+            crearLogro("DIEZ_FOROS", "Líder de Opinión", "Has participado en 10 discusiones del foro", "📢", "SOCIAL", 10);
+            crearLogro("CINCO_TEMAS", "Iniciador de Debates", "Has creado 5 temas nuevos en el foro", "💡", "SOCIAL", 5);
             crearLogro("ASISTENCIA_PERFECTA", "Asistencia Perfecta", "100% de asistencia en un mes", "🏅", "ASISTENCIA", 1);
+            crearLogro("ASISTENCIA_CUATRIMESTRE", "Asistencia de Hierro", "Has asistido a todas las clases de un cuatrimestre", "🛡️", "ASISTENCIA", 1);
             crearLogro("PRIMER_CURSO", "Bienvenido", "Te inscribiste en tu primer curso", "🎓", "ESPECIAL", 1);
             crearLogro("TRES_CURSOS", "Multidisciplinar", "Estás inscrito en 3 cursos", "🌟", "ESPECIAL", 3);
+            crearLogro("PLENO_CURSOS", "Estudiante Total", "Te has inscrito en 5 cursos diferentes", "💎", "ESPECIAL", 5);
+            crearLogro("SEIS_MESES", "Veterano", "Llevas 6 meses aprendiendo con nosotros", "⏳", "ESPECIAL", 6);
             crearLogro("VALORACION", "Crítico Constructivo", "Realizaste tu primera valoración", "⭐", "SOCIAL", 1);
             log.info("Logros iniciales creados");
         }

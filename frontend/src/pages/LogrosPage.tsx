@@ -111,7 +111,7 @@ export default function LogrosPage() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{logro.descripcion}</p>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className={'text-xs px-2 py-0.5 rounded-full ' +
                       (logro.categoria === 'ACADEMICO' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
                        logro.categoria === 'SOCIAL' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' :
@@ -119,6 +119,11 @@ export default function LogrosPage() {
                        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400')}>
                       {categoriaNombres[logro.categoria] || logro.categoria}
                     </span>
+                    {logro.asignaturaNombre && (
+                      <span className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[10px] px-2 py-0.5 rounded-full font-bold border border-indigo-100 dark:border-indigo-800">
+                        {logro.asignaturaNombre}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

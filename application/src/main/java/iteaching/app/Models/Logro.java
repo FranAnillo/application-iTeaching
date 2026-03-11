@@ -43,6 +43,10 @@ public class Logro {
     @Column(name = "valor_objetivo")
     private Integer valorObjetivo = 1;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "asignatura_id")
+    private Asignatura asignatura;
+
     @ManyToMany(mappedBy = "logros")
     private Set<Persona> usuarios = new HashSet<>();
 

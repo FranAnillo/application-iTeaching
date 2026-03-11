@@ -18,10 +18,11 @@ import {
   rubricasApi,
   gradosApi,
   archivosApi,
+  logrosApi,
 } from '../api/endpoints';
-import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase, AsistenciaRecord, Progreso, Rubrica, CriterioRubrica, Grado } from '../types';
+import type { Asignatura, Anuncio, Material, Tarea, Entrega, ForoTema, ForoRespuesta, Valoracion, Grupo, Carpeta, Clase, AsistenciaRecord, Progreso, Rubrica, CriterioRubrica, Grado, Logro } from '../types';
 
-type Tab = 'info' | 'anuncios' | 'materiales' | 'horarios' | 'tareas' | 'evaluaciones' | 'simulacros' | 'foro' | 'grupos' | 'calificaciones' | 'asistencia' | 'progreso' | 'rubricas';
+type Tab = 'info' | 'anuncios' | 'materiales' | 'horarios' | 'tareas' | 'evaluaciones' | 'simulacros' | 'foro' | 'grupos' | 'calificaciones' | 'asistencia' | 'progreso' | 'rubricas' | 'logros';
 
 var ALL_TABS: { key: Tab; label: string; icon: string; roles: string[] | null }[] = [
   { key: 'info', label: 'Informacion', icon: 'i', roles: null },
@@ -37,6 +38,7 @@ var ALL_TABS: { key: Tab; label: string; icon: string; roles: string[] | null }[
   { key: 'asistencia', label: 'Asistencia', icon: 'A', roles: null },
   { key: 'progreso', label: 'Progreso', icon: 'P', roles: null },
   { key: 'rubricas', label: 'Rubricas', icon: 'R', roles: null },
+  { key: 'logros', label: 'Logros', icon: '🏆', roles: null },
 ];
 
 export default function AsignaturaDetailPage() {
@@ -220,6 +222,18 @@ export default function AsignaturaDetailPage() {
   var rubricaFormState = useState({ nombre: '', descripcion: '', tareaId: 0, criterios: [] as CriterioRubrica[] });
   var rubricaForm = rubricaFormState[0];
   var setRubricaForm = rubricaFormState[1];
+  
+  // Logros
+  var logrosState = useState<Logro[]>([]);
+  var logros = logrosState[0];
+  var setLogros = logrosState[1];
+  var showLogroFormState = useState(false);
+  var showLogroForm = showLogroFormState[0];
+  var setShowLogroForm = showLogroFormState[1];
+  var logroFormState = useState({ codigo: '', nombre: '', descripcion: '', icono: '🏆', categoria: 'ACADEMICO', valorObjetivo: 1 });
+  var logroForm = logroFormState[0];
+  var setLogroForm = logroFormState[1];
+
 
   // Role check
   var isAdmin = user && user.role === 'ROLE_ADMIN';
@@ -280,6 +294,9 @@ export default function AsignaturaDetailPage() {
     if (tab === 'rubricas') {
       tareasApi.getByAsignatura(numId).then(function (r) { setTareas(r.data); }).catch(function () {});
       loadRubricas(numId);
+    }
+    if (tab === 'logros') {
+      logrosApi.getByAsignatura(numId).then(function (r) { setLogros(r.data); }).catch(function () {});
     }
   }, [tab, id, isNew]);
 
@@ -426,6 +443,15 @@ export default function AsignaturaDetailPage() {
     e.preventDefault();
     carpetasApi.create(Object.assign({}, carpetaForm, { asignaturaId: Number(id) }))
       .then(function () { setShowCarpetaForm(false); setCarpetaForm({ nombre: '' }); loadCarpetas(); loadMateriales(); });
+  }
+
+  function handleCreateLogro(e: FormEvent) {
+    e.preventDefault();
+    logrosApi.crear(Object.assign({}, logroForm, { asignaturaId: Number(id) })).then(function () {
+      setShowLogroForm(false);
+      setLogroForm({ codigo: '', nombre: '', descripcion: '', icono: '🏆', categoria: 'ACADEMICO', valorObjetivo: 1 });
+      logrosApi.getByAsignatura(Number(id)).then(function (r) { setLogros(r.data); });
+    });
   }
 
   function loadValoraciones() { valoracionesApi.getByAsignatura(Number(id)).then(function (r) { setValoraciones(r.data); }); }
@@ -1645,6 +1671,83 @@ export default function AsignaturaDetailPage() {
                             })}
                           </tbody>
                         </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== LOGROS TAB ===== */}
+      {tab === 'logros' && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Logros de la asignatura</h3>
+            {isAdmin && <button onClick={function () { setShowLogroForm(!showLogroForm); }} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition">{showLogroForm ? 'Cancelar' : '+ Nuevo logro'}</button>}
+          </div>
+
+          {showLogroForm && isAdmin && (
+            <form onSubmit={handleCreateLogro} className="mb-6 space-y-4 rounded-xl bg-white dark:bg-gray-800 p-6 shadow-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Codigo (unico)</label>
+                  <input type="text" value={logroForm.codigo} onChange={function (e) { setLogroForm(Object.assign({}, logroForm, { codigo: e.target.value })); }} required placeholder="LOGRO_001" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Icono (Emoji)</label>
+                  <input type="text" value={logroForm.icono} onChange={function (e) { setLogroForm(Object.assign({}, logroForm, { icono: e.target.value })); }} required className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
+                <input type="text" value={logroForm.nombre} onChange={function (e) { setLogroForm(Object.assign({}, logroForm, { nombre: e.target.value })); }} required className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Descripcion</label>
+                <textarea value={logroForm.descripcion} onChange={function (e) { setLogroForm(Object.assign({}, logroForm, { descripcion: e.target.value })); }} rows={2} required className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
+                  <select value={logroForm.categoria} onChange={function (e) { setLogroForm(Object.assign({}, logroForm, { categoria: e.target.value })); }} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none">
+                    <option value="ACADEMICO">Academico</option>
+                    <option value="SOCIAL">Social</option>
+                    <option value="ASISTENCIA">Asistencia</option>
+                    <option value="ESPECIAL">Especial</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Valor Objetivo</label>
+                  <input type="number" value={logroForm.valorObjetivo} onChange={function (e) { setLogroForm(Object.assign({}, logroForm, { valorObjetivo: Number(e.target.value) })); }} required className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:outline-none" />
+                </div>
+              </div>
+              <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">Crear logro para esta asignatura</button>
+            </form>
+          )}
+
+          {logros.length === 0 ? (
+            <p className="rounded-xl bg-white dark:bg-gray-800 p-8 text-center text-gray-500 shadow-sm">No hay logros especificos para esta asignatura</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {logros.map(function (l) {
+                return (
+                  <div key={l.id} className={'relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-5 shadow-sm border transition-all ' + (l.obtenido ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 dark:border-gray-700 opacity-75 grayscale')}>
+                    <div className="flex items-center gap-4">
+                      <div className={'flex h-12 w-12 items-center justify-center rounded-xl text-3xl ' + (l.obtenido ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400 dark:bg-gray-700')}>
+                        {l.icono}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900 dark:text-white">{l.nombre}</h4>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">{l.categoria}</span>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{l.descripcion}</p>
+                    {l.obtenido && (
+                      <div className="mt-3 flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 w-fit">
+                        <span>&#10004;</span> ¡CONSEGUIDO!
                       </div>
                     )}
                   </div>

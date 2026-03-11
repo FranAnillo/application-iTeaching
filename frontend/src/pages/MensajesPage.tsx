@@ -48,7 +48,7 @@ export default function MensajesPage() {
       setMensajes(results[0].data);
       setUsuarios(results[1].data);
       setMe(results[2].data);
-    }).catch(function () {}).finally(function () { setLoading(false); });
+    }).catch(function () { }).finally(function () { setLoading(false); });
   }, []);
 
   function selectUser(u: Usuario) {
@@ -56,8 +56,8 @@ export default function MensajesPage() {
     if (me) {
       mensajesApi.getConversacion(u.id).then(function (res) {
         setConversacion(res.data);
-        mensajesApi.marcarLeidos(u.id).catch(function () {});
-      }).catch(function () {});
+        mensajesApi.marcarLeidos(u.id).catch(function () { });
+      }).catch(function () { });
     }
   }
 
@@ -69,18 +69,18 @@ export default function MensajesPage() {
     }).then(function (res) {
       setConversacion(conversacion.concat([res.data]));
       setNuevoMensaje('');
-    }).catch(function () {});
+    }).catch(function () { });
   }
 
   // Build contact list from messages
   function getContacts() {
     if (!me) return [];
     var contactMap: Record<number, { user: Usuario; lastMessage: Mensaje; unread: number }> = {};
-    
+
     mensajes.forEach(function (m) {
       var contactId = m.remitenteId === me!.id ? m.destinatarioId : m.remitenteId;
       var contactName = m.remitenteId === me!.id ? m.destinatarioNombre : m.remitenteNombre;
-      
+
       if (!contactMap[contactId]) {
         var usr = usuarios.find(function (u) { return u.id === contactId; });
         contactMap[contactId] = {
@@ -130,7 +130,7 @@ export default function MensajesPage() {
     <div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Mensajes</h2>
-        <p className="text-gray-500 dark:text-gray-400">Mensajería interna entre miembros del curso</p>
+        <p className="text-gray-500 dark:text-gray-400">Mensajería interna entre miembros de la Asignatura</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ height: 'calc(100vh - 220px)' }}>
