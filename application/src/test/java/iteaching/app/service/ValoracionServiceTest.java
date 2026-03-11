@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -61,8 +62,8 @@ class ValoracionServiceTest {
         asignatura = new Asignatura();
         asignatura.setId(5L);
         asignatura.setNombre("Mates");
-        asignatura.setProfesores(new HashSet<>(Set.of(profesor)));
-        asignatura.setEstudiantes(new HashSet<>(Set.of(alumno)));
+        asignatura.setProfesores(new ArrayList<>(Set.of(profesor)));
+        asignatura.setEstudiantes(new ArrayList<>(Set.of(alumno)));
 
         valoracion = new Valoracion();
         valoracion.setId(100L);

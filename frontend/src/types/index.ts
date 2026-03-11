@@ -30,6 +30,22 @@ export interface Usuario {
   role: string;
   puntuacion: number;
   avatar: string | null;
+  gradoId?: number;
+  gradoNombre?: string;
+}
+
+export type CursoAcademico =
+  | 'PRIMERO'
+  | 'SEGUNDO'
+  | 'TERCERO'
+  | 'CUARTO'
+  | 'QUINTO';
+
+export interface Grado {
+  id: number;
+  nombre: string;
+  cursoAcademico: CursoAcademico;
+  asignaturaIds: number[];
 }
 
 export interface Asignatura {

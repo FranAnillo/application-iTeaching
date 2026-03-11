@@ -32,6 +32,7 @@ class PersonaServiceTest {
     @Mock private PersonaRepository personaRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private iteaching.app.repository.GradoRepository gradoRepository;
 
     @InjectMocks private PersonaService service;
 
@@ -114,6 +115,35 @@ class PersonaServiceTest {
     }
 
     @Test
+    void importFromCsv_withGrado_assignsGrade() {
+        String csv = "username;password;nombre;apellido;email;telefono;rol;grado\n"
+                   + "u;pass;N;A;e@t.com;111;ESTUDIANTE;Ingenieria\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        when(usuarioRepository.existsByUsername(anyString())).thenReturn(false);
+        when(personaRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        // make repository return a persona with grado set when saved
+        when(personaRepository.save(any(Persona.class))).thenAnswer(inv -> {
+            Persona p = inv.getArgument(0);
+            p.setId(200L);
+            // mimic that grado was looked up earlier
+            iteaching.app.Models.Grado g = new iteaching.app.Models.Grado();
+            g.setId(5L);
+            g.setNombre("Ingenieria");
+            p.setGrado(g);
+            return p;
+        });
+        when(gradoRepository.findByNombreIgnoreCase("Ingenieria")).thenReturn(java.util.Optional.of(new iteaching.app.Models.Grado()));
+
+        CsvImportResult result = service.importFromCsv(is);
+        assertEquals(1, result.getImportados().size());
+        UsuarioDTO dto = result.getImportados().get(0);
+        assertEquals("Ingenieria", dto.getGradoNombre());
+        assertTrue(result.getErrores().isEmpty());
+    }
+
+    @Test
     void importFromCsv_duplicateUsername_addsError() {
         String csv = "username;password;nombre;apellido;email\n"
                    + "existing;Pass123!;Nombre;Apellido;new@test.com\n";
@@ -168,6 +198,56 @@ class PersonaServiceTest {
     }
 
     @Test
+    void importFromCsv_invalidPhone_addsError() {
+        String csv = "username;password;nombre;apellido;email;telefono\n"
+                   + "user1;pass;N;A;e@t.com;1234567890123456\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        CsvImportResult result = service.importFromCsv(is);
+        assertEquals(0, result.getImportados().size());
+        assertTrue(result.getErrores().get(0).contains("telefono inválido"));
+    }
+
+    @Test
+    void importFromCsv_unknownGrado_addsError() {
+        String csv = "username;password;nombre;apellido;email;telefono;rol;grado\n"
+                   + "u;pass;N;A;e@t.com;111;ESTUDIANTE;NoExiste\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        when(usuarioRepository.existsByUsername(anyString())).thenReturn(false);
+        when(personaRepository.existsByEmail(anyString())).thenReturn(false);
+        when(gradoRepository.findByNombreIgnoreCase("NoExiste")).thenReturn(Optional.empty());
+
+        CsvImportResult result = service.importFromCsv(is);
+        assertEquals(0, result.getImportados().size());
+        assertTrue(result.getErrores().get(0).contains("grado desconocido"));
+    }
+
+    @Test
+    void importFromCsv_sampleFromUser_reportsMissingSurname() {
+        String csv = "username;password;nombre;apellido;email;telefono;rol\n"
+                   + "usuario1;12345;Miguel;Garcia;miguel@example.com;123456789;\n"
+                   + "usuario2;12345;Laura;;laura@example.com;987654321;PROFESOR\n"
+                   + "usuario3;12345;Carlos;Lopez;carlos@example.com;555555555;ESTUDIANTE\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        when(usuarioRepository.existsByUsername(anyString())).thenReturn(false);
+        when(personaRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(personaRepository.save(any(Persona.class))).thenAnswer(inv -> {
+            Persona p = inv.getArgument(0);
+            p.setId(300L);
+            return p;
+        });
+
+        CsvImportResult result = service.importFromCsv(is);
+        // two valid rows imported, one error for missing apellido
+        assertEquals(2, result.getImportados().size());
+        assertEquals(1, result.getErrores().size());
+        assertTrue(result.getErrores().get(0).contains("campos obligatorios vacíos"));
+    }
+
+    @Test
     void importFromCsv_exceedsMaxLines_addsError() {
         StringBuilder sb = new StringBuilder("username;password;nombre;apellido;email\n");
         for (int i = 0; i < 501; i++) {
@@ -198,6 +278,40 @@ class PersonaServiceTest {
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
         CsvImportResult result = service.importFromCsv(is);
-        assertTrue(result.getErrores().get(0).contains("campos obligatorios vacios"));
+        assertTrue(result.getErrores().get(0).contains("campos obligatorios vacíos"));
+    }
+
+    @Test
+    void importFromCsv_invalidEmail_addsError() {
+        String csv = "username;password;nombre;apellido;email\n"
+                   + "user;pass;Name;Last;not-an-email\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        CsvImportResult result = service.importFromCsv(is);
+        assertTrue(result.getErrores().get(0).contains("email inválido"));
+    }
+
+    @Test
+    void importFromCsv_saveException_clearsSessionAndContinues() {
+        String csv = "username;password;nombre;apellido;email\n"
+                   + "baduser;pass;Name;Last;bad@test.com\n"
+                   + "gooduser;pass;Name;Last;good@test.com\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        when(usuarioRepository.existsByUsername(anyString())).thenReturn(false);
+        when(personaRepository.existsByEmail(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        // first save throws exception, second returns persona with id
+        when(personaRepository.save(any(Persona.class)))
+                .thenThrow(new RuntimeException("DB error"))
+                .thenAnswer(inv -> {
+                    Persona p = inv.getArgument(0);
+                    p.setId(200L);
+                    return p;
+                });
+
+        CsvImportResult result = service.importFromCsv(is);
+        assertEquals(1, result.getImportados().size());
+        assertTrue(result.getErrores().get(0).contains("error al guardar"));
     }
 }

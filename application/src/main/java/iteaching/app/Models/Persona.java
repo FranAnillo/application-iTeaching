@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Digits;
@@ -50,6 +51,11 @@ public class Persona extends Usuarios {
 
     @Column(nullable = true, length = 64)
     private String avatar;
+
+    /** Grado universitario al que pertenece (opcional) */
+    @ManyToOne
+    @JoinColumn(name = "grado_id")
+    private Grado grado;
 
     /** Asignaturas creadas por este usuario (como administrador) */
     @JsonIgnore

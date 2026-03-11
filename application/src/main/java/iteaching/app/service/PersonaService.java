@@ -6,10 +6,15 @@ import iteaching.app.dto.CsvImportResult;
 import iteaching.app.dto.UsuarioDTO;
 import iteaching.app.repository.PersonaRepository;
 import iteaching.app.repository.UsuarioRepository;
+import iteaching.app.repository.GradoRepository;
 import iteaching.app.security.InputSanitizer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -21,16 +26,22 @@ import java.util.stream.Collectors;
 @Service
 public class PersonaService {
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private final PersonaRepository personaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final GradoRepository gradoRepository;
 
     public PersonaService(PersonaRepository personaRepository,
                           UsuarioRepository usuarioRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          GradoRepository gradoRepository) {
         this.personaRepository = personaRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.gradoRepository = gradoRepository;
     }
 
     public List<UsuarioDTO> findAll() {
@@ -66,7 +77,8 @@ public class PersonaService {
      * El rol es opcional y por defecto ROLE_ESTUDIANTE.
      * Valores válidos: ESTUDIANTE, PROFESOR, ADMIN (con o sin prefijo ROLE_).
      */
-    @Transactional
+    // importFromCsv handles each line in its own transactional context to
+    // prevent a single failure from marking the entire operation rollback-only.
     public CsvImportResult importFromCsv(InputStream inputStream) {
         List<UsuarioDTO> imported = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -98,10 +110,30 @@ public class PersonaService {
                 String email = InputSanitizer.sanitize(parts[4].trim());
                 String telefono = parts.length > 5 ? InputSanitizer.sanitize(parts[5].trim()) : "";
                 String rolStr = parts.length > 6 ? parts[6].trim().toUpperCase() : "";
+                String gradoNombre = parts.length > 7 ? parts[7].trim() : "";
 
+                // Validación mejorada: campos obligatorios no vacíos y email válido
                 if (username.isEmpty() || password.isEmpty() || nombre.isEmpty()
                         || apellido.isEmpty() || email.isEmpty()) {
-                    errors.add("Linea " + lineNum + ": campos obligatorios vacios (" + username + ")");
+                    errors.add("Linea " + lineNum + ": campos obligatorios vacíos (" + username + ")");
+                    continue;
+                }
+
+                // Validar que nombre y apellido no sean solo espacios
+                if (nombre.trim().isEmpty() || apellido.trim().isEmpty()) {
+                    errors.add("Linea " + lineNum + ": nombre/apellido inválido (solo espacios) (" + username + ")");
+                    continue;
+                }
+
+                // Validar formato de email básico
+                if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                    errors.add("Linea " + lineNum + ": email inválido ('" + email + "')");
+                    continue;
+                }
+
+                // Validar teléfono opcional: hasta 15 dígitos numéricos
+                if (!telefono.isEmpty() && !telefono.matches("^\\d{1,15}$")) {
+                    errors.add("Linea " + lineNum + ": telefono inválido ('" + telefono + "')");
                     continue;
                 }
 
@@ -126,7 +158,19 @@ public class PersonaService {
                     }
                 }
 
+                if (!gradoNombre.isEmpty()) {
+                    var opt = gradoRepository.findByNombreIgnoreCase(gradoNombre);
+                    if (opt.isEmpty()) {
+                        errors.add("Linea " + lineNum + ": grado desconocido '" + gradoNombre + "'");
+                        continue;
+                    }
+                }
+
                 Persona persona = new Persona();
+                if (!gradoNombre.isEmpty()) {
+                    // we already know it exists
+                    persona.setGrado(gradoRepository.findByNombreIgnoreCase(gradoNombre).orElse(null));
+                }
                 persona.setUsername(username);
                 persona.setPassword(passwordEncoder.encode(password));
                 persona.setNombre(nombre);
@@ -137,8 +181,13 @@ public class PersonaService {
                 persona.setRole(role);
 
                 try {
-                    imported.add(toDTO(personaRepository.save(persona)));
+                    Persona saved = savePersonaTransactional(persona);
+                    imported.add(toDTO(saved));
                 } catch (Exception e) {
+                    // clear persistence context after failure to avoid flushing invalid state
+                    if (entityManager != null) {
+                        entityManager.clear();
+                    }
                     errors.add("Linea " + lineNum + ": error al guardar '" + username + "' - " + e.getMessage());
                 }
             }
@@ -149,6 +198,11 @@ public class PersonaService {
         }
 
         return new CsvImportResult(imported, errors);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private Persona savePersonaTransactional(Persona persona) {
+        return personaRepository.save(persona);
     }
 
     private UsuarioDTO toDTO(Persona p) {
@@ -162,6 +216,10 @@ public class PersonaService {
         dto.setRole(p.getRole() != null ? p.getRole().name() : null);
         dto.setPuntuacion(p.getPuntuacion());
         dto.setAvatar(p.getAvatar());
+        if (p.getGrado() != null) {
+            dto.setGradoId(p.getGrado().getId());
+            dto.setGradoNombre(p.getGrado().getNombre());
+        }
         return dto;
     }
 }

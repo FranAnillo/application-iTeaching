@@ -49,23 +49,7 @@ public class Asignatura {
     @Column(name = "url")
     private String url;
 
-    /** Profesores asignados a este curso */
-    @ManyToMany
-    @JoinTable(
-        name = "asignatura_profesor",
-        joinColumns = @JoinColumn(name = "asignatura_id"),
-        inverseJoinColumns = @JoinColumn(name = "persona_id")
-    )
-    private Set<Persona> profesores = new HashSet<>();
 
-    /** Estudiantes matriculados en este curso */
-    @ManyToMany
-    @JoinTable(
-        name = "asignatura_estudiante",
-        joinColumns = @JoinColumn(name = "asignatura_id"),
-        inverseJoinColumns = @JoinColumn(name = "persona_id")
-    )
-    private Set<Persona> estudiantes = new HashSet<>();
 
     /** Usuario que creó el curso (administrador) */
     @ManyToOne
@@ -85,4 +69,28 @@ public class Asignatura {
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "asignatura", orphanRemoval = true)
     private List<Carpeta> carpetas = new ArrayList<>();
+
+    /** Grado al que pertenece la asignatura */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "grado_id", nullable = false)
+    private Grado grado;
+
+        /** Profesores de la asignatura */
+    @ManyToMany
+    @JoinTable(
+        name = "asignatura_profesores",
+        joinColumns = @JoinColumn(name = "asignatura_id"),
+        inverseJoinColumns = @JoinColumn(name = "profesor_id")
+    )
+    private List<Persona> profesores = new ArrayList<>();
+
+    /** Estudiantes de la asignatura */
+    @ManyToMany
+    @JoinTable(
+        name = "asignatura_estudiantes",
+        joinColumns = @JoinColumn(name = "asignatura_id"),
+        inverseJoinColumns = @JoinColumn(name = "estudiante_id")
+    )
+    private List<Persona> estudiantes = new ArrayList<>();
+
 }

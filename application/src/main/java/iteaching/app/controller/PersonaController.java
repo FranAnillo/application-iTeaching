@@ -51,13 +51,21 @@ public class PersonaController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/import-csv")
     public ResponseEntity<CsvImportResult> importCsv(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            CsvImportResult empty = new CsvImportResult(List.of(),
+                    List.of("Archivo CSV faltante o vacío"));
+            return ResponseEntity.badRequest().body(empty);
+        }
+
         try {
             CsvImportResult result = personaService.importFromCsv(file.getInputStream());
             return ResponseEntity.ok(result);
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error al importar CSV");
+            // log server-side for debugging
+            System.err.println("[PersonaController] error importing CSV: " + e.getMessage());
+            CsvImportResult failure = new CsvImportResult(List.of(),
+                    List.of("Error al importar CSV: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(failure);
         }
     }
 }

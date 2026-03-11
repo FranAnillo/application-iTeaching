@@ -28,11 +28,18 @@ Start-Sleep -Seconds 2
 Write-Host "       Puertos liberados." -ForegroundColor Green
 
 # --- 2. Configurar JAVA_HOME ---
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
+# proyecto compilado para Java 21; use JDK 21 si está instalado
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
 if (-not (Test-Path "$env:JAVA_HOME\bin\java.exe")) {
-    Write-Host "[ERROR] No se encontro Java 17 en $env:JAVA_HOME" -ForegroundColor Red
-    Write-Host "        Ajusta la variable JAVA_HOME en este script." -ForegroundColor Red
-    exit 1
+    # intentar detectar automáticamente un JDK 21 en el PATH
+    $cmd = Get-Command java -ErrorAction SilentlyContinue
+    if ($cmd) {
+        $found = $cmd.Source
+        Write-Host "[WARNING] No se encontro JDK21 en $env:JAVA_HOME, usando java de PATH ($found)" -ForegroundColor Yellow
+    } else {
+        Write-Host "[ERROR] No se encontro Java 21. Ajusta JAVA_HOME en este script o instala JDK21." -ForegroundColor Red
+        exit 1
+    }
 }
 Write-Host "[2/4] JAVA_HOME = $env:JAVA_HOME" -ForegroundColor Green
 

@@ -45,6 +45,14 @@ export const usuariosApi = {
   },
 };
 
+// ===== Grados =====
+export const gradosApi = {
+  getAll: () => api.get<Grado[]>('/grados'),
+  create: (data: Partial<Grado>) => api.post<Grado>('/grados', data),
+  addAsignatura: (gradoId: number, asigId: number) => api.post<Grado>(`/grados/${gradoId}/asignaturas/${asigId}`),
+  removeAsignatura: (gradoId: number, asigId: number) => api.delete<Grado>(`/grados/${gradoId}/asignaturas/${asigId}`),
+};
+
 // ===== Asignaturas =====
 export const asignaturasApi = {
   getAll: () => api.get<Asignatura[]>('/asignaturas'),

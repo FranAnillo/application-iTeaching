@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import AsignaturasPage from './pages/AsignaturasPage';
 import AsignaturaDetailPage from './pages/AsignaturaDetailPage';
 import UsuariosPage from './pages/UsuariosPage';
+import GradosPage from './pages/GradosPage';
 import ClasesPage from './pages/ClasesPage';
 import ValoracionesPage from './pages/ValoracionesPage';
 import MaterialesPage from './pages/MaterialesPage';
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="calificaciones" element={<CalificacionesGlobalPage />} />
             <Route path="logros" element={<LogrosPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
+            <Route path="grados" element={<GradosPage />} />
             <Route path="clases" element={<ClasesPage />} />
             <Route path="valoraciones" element={<ValoracionesPage />} />
             <Route path="materiales" element={<MaterialesPage />} />

@@ -50,8 +50,8 @@ class AsignaturaServiceTest {
         asignatura.setDescripcion("Curso de mates");
         asignatura.setUrl("https://example.com");
         asignatura.setCreador(admin);
-        asignatura.setProfesores(new HashSet<>());
-        asignatura.setEstudiantes(new HashSet<>());
+        asignatura.setProfesores(new ArrayList<>());
+        asignatura.setEstudiantes(new ArrayList<>());
     }
 
     @Test
@@ -90,8 +90,8 @@ class AsignaturaServiceTest {
         when(asignaturaRepository.save(any(Asignatura.class))).thenAnswer(inv -> {
             Asignatura a = inv.getArgument(0);
             a.setId(10L);
-            a.setProfesores(new HashSet<>());
-            a.setEstudiantes(new HashSet<>());
+            a.setProfesores(new ArrayList<>());
+            a.setEstudiantes(new ArrayList<>());
             return a;
         });
 
@@ -260,8 +260,8 @@ class AsignaturaServiceTest {
         when(asignaturaRepository.save(any(Asignatura.class))).thenAnswer(inv -> {
             Asignatura a = inv.getArgument(0);
             a.setId(100L);
-            a.setProfesores(new HashSet<>());
-            a.setEstudiantes(new HashSet<>());
+            a.setProfesores(new ArrayList<>());
+            a.setEstudiantes(new ArrayList<>());
             return a;
         });
 
@@ -282,8 +282,8 @@ class AsignaturaServiceTest {
         when(asignaturaRepository.save(any(Asignatura.class))).thenAnswer(inv -> {
             Asignatura a = inv.getArgument(0);
             a.setId(1L);
-            a.setProfesores(new HashSet<>());
-            a.setEstudiantes(new HashSet<>());
+            a.setProfesores(new ArrayList<>());
+            a.setEstudiantes(new ArrayList<>());
             return a;
         });
 
@@ -299,8 +299,8 @@ class AsignaturaServiceTest {
         when(asignaturaRepository.save(any(Asignatura.class))).thenAnswer(inv -> {
             Asignatura a = inv.getArgument(0);
             a.setId(100L);
-            a.setProfesores(new HashSet<>());
-            a.setEstudiantes(new HashSet<>());
+            a.setProfesores(new ArrayList<>());
+            a.setEstudiantes(new ArrayList<>());
             return a;
         });
 

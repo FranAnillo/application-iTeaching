@@ -54,8 +54,8 @@ class ForoServiceTest {
         asignatura = new Asignatura();
         asignatura.setId(5L);
         asignatura.setNombre("Física");
-        asignatura.setProfesores(new HashSet<>());
-        asignatura.setEstudiantes(new HashSet<>());
+        asignatura.setProfesores(new ArrayList<>());
+        asignatura.setEstudiantes(new ArrayList<>());
 
         tema = new ForoTema();
         tema.setId(10L);

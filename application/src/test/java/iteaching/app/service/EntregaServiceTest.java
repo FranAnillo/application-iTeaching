@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -44,8 +45,8 @@ class EntregaServiceTest {
         asignatura = new iteaching.app.Models.Asignatura();
         asignatura.setId(1L);
         asignatura.setNombre("Mates");
-        asignatura.setProfesores(new HashSet<>());
-        asignatura.setEstudiantes(new HashSet<>());
+        asignatura.setProfesores(new ArrayList<>());
+        asignatura.setEstudiantes(new ArrayList<>());
 
         Persona creador = new Persona();
         creador.setId(10L);

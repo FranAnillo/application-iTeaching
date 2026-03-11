@@ -105,6 +105,7 @@ export default function UsuariosPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Nombre</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Usuario</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Grado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Rol</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Puntuacion</th>
               </tr>
@@ -123,6 +124,7 @@ export default function UsuariosPage() {
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{u.username}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{u.email}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{u.gradoNombre || '-'}</td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm">
                       <span className={'rounded-full px-2.5 py-0.5 text-xs font-medium ' + roleColor}>
                         {u.role?.replace('ROLE_', '')}
@@ -155,7 +157,7 @@ export default function UsuariosPage() {
             <div className="mb-4 rounded-lg bg-indigo-50 p-4 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
               <p className="mb-2 font-semibold">Formato del CSV (separado por ;)</p>
               <code className="block rounded bg-white p-2 text-xs dark:bg-gray-900 dark:text-gray-300">
-                username;password;nombre;apellido;email;telefono;rol
+                username;password;nombre;apellido;email;telefono;rol;grado
               </code>
               <p className="mt-2 text-xs">
                 <strong>Campos obligatorios:</strong> username, password, nombre, apellido, email<br />
@@ -209,14 +211,36 @@ export default function UsuariosPage() {
                 )}
                 {importResult.errores.length > 0 && (
                   <div className="rounded-lg bg-red-50 p-3 dark:bg-red-900/30">
-                    <p className="text-sm font-semibold text-red-800 dark:text-red-300">
-                      {String.fromCharCode(10060)} {importResult.errores.length} error(es)
-                    </p>
-                    <ul className="mt-1 list-disc pl-5 text-xs text-red-700 dark:text-red-400">
-                      {importResult.errores.map(function (err, i) {
-                        return <li key={i}>{err}</li>;
-                      })}
-                    </ul>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-red-800 dark:text-red-300">
+                        {String.fromCharCode(10060)} {importResult.errores.length} error(es)
+                      </p>
+                      <button
+                        onClick={() => {
+                          const blob = new Blob([importResult.errores.join('\n')], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'errores_importacion.txt';
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="text-xs text-red-600 hover:underline dark:text-red-400"
+                      >
+                        Exportar a TXT
+                      </button>
+                    </div>
+                    <div className="mt-2 max-h-40 overflow-y-auto text-xs text-red-700 dark:text-red-400">
+                      <table className="w-full">
+                        <tbody>
+                          {importResult.errores.map((err, i) => (
+                            <tr key={i} className="border-b border-red-200 dark:border-red-800">
+                              <td className="py-1">{err}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>

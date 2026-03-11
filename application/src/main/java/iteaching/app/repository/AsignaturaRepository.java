@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface AsignaturaRepository extends JpaRepository<Asignatura, Long> {
+    List<Asignatura> findByGradoId(Long gradoId);
     List<Asignatura> findByNombreContainingIgnoreCase(String nombre);
 }

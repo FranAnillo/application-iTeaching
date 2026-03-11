@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -42,8 +43,8 @@ class GrupoServiceTest {
         asignatura = new Asignatura();
         asignatura.setId(5L);
         asignatura.setNombre("Mates");
-        asignatura.setProfesores(new HashSet<>());
-        asignatura.setEstudiantes(new HashSet<>());
+        asignatura.setProfesores(new ArrayList<>());
+        asignatura.setEstudiantes(new ArrayList<>());
 
         grupo = new Grupo();
         grupo.setId(10L);

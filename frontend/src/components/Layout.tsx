@@ -14,6 +14,7 @@ const allNavItems = [
   { to: '/calificaciones', label: 'Calificaciones', icon: '📊', roles: null },
   { to: '/logros', label: 'Logros', icon: '🏆', roles: null },
   { to: '/usuarios', label: 'Usuarios', icon: '👥', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
+  { to: '/grados', label: 'Grados', icon: '🎓', roles: ['ROLE_ADMIN'] },
   { to: '/clases', label: 'Clases', icon: '📅', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
   { to: '/valoraciones', label: 'Valoraciones', icon: '⭐', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },
   { to: '/materiales', label: 'Materiales', icon: '📂', roles: ['ROLE_ADMIN', 'ROLE_PROFESOR'] },

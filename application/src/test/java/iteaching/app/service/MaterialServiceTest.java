@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -50,8 +51,8 @@ class MaterialServiceTest {
         asignatura = new Asignatura();
         asignatura.setId(5L);
         asignatura.setNombre("Física");
-        asignatura.setProfesores(new HashSet<>());
-        asignatura.setEstudiantes(new HashSet<>());
+        asignatura.setProfesores(new ArrayList<>());
+        asignatura.setEstudiantes(new ArrayList<>());
 
         carpeta = new Carpeta();
         carpeta.setId(3L);

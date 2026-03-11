@@ -5,6 +5,8 @@ import iteaching.app.Models.Persona;
 import iteaching.app.Models.Usuarios;
 import iteaching.app.repository.LogroRepository;
 import iteaching.app.repository.UsuarioRepository;
+import iteaching.app.repository.GradoRepository;
+import iteaching.app.Models.Grado;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -19,12 +21,14 @@ public class DataSeeder implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final LogroRepository logroRepository;
+    private final GradoRepository gradoRepository;
 
     public DataSeeder(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
-                      LogroRepository logroRepository) {
+                      LogroRepository logroRepository, GradoRepository gradoRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.logroRepository = logroRepository;
+        this.gradoRepository = gradoRepository;
     }
 
     @Override
@@ -32,6 +36,7 @@ public class DataSeeder implements CommandLineRunner {
         createAdminIfNotExists();
         createProfesorIfNotExists();
         createEstudianteIfNotExists();
+        seedGrados();
         seedLogros();
     }
 
@@ -87,6 +92,21 @@ public class DataSeeder implements CommandLineRunner {
         } else {
             log.info("Cuenta de profesor ya existe");
         }
+    }
+
+    private void seedGrados() {
+        if (gradoRepository.count() == 0) {
+            crearGrado("Ingenieria");
+            crearGrado("Matematicas");
+            crearGrado("Historia");
+            log.info("Grados iniciales creados");
+        }
+    }
+
+    private void crearGrado(String nombre) {
+        Grado g = new Grado();
+        g.setNombre(nombre);
+        gradoRepository.save(g);
     }
 
     private void seedLogros() {

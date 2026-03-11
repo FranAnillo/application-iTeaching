@@ -17,4 +17,8 @@ public class UsuarioDTO {
     private String role;
     private Double puntuacion;
     private String avatar;
+
+    // grado universitario (si aplica)
+    private Long gradoId;
+    private String gradoNombre;
 }
