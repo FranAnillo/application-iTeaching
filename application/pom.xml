@@ -107,6 +107,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Driver PostgreSQL (producción) -->
+		<dependency>
+  			<groupId>org.postgresql</groupId>
+  			<artifactId>postgresql</artifactId>
+  			<scope>runtime</scope>
+		</dependency>
+
 		 <!-- Email -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
